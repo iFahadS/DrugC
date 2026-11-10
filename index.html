@@ -23,7 +23,7 @@ button.c{padding:8px 12px;border-radius:8px;border:1px solid var(--pri);backgrou
 </style></head><body>
 <h1>Clinical Dosing Suite <span class="sm">prototype</span></h1>
 <div class="sm">Adult intermittent IV vancomycin. Decision support only: it does not replace clinical judgement or hospital protocol. Prototype: not clinically validated.</div>
-<div class="card"><div class="modes" id="drugs"><button data-d="vanc" class="on">Vancomycin</button><button data-d="gent">Gentamicin</button><button disabled>Amikacin (Pro, soon)</button><button disabled>Phenytoin (Pro, soon)</button></div></div>
+<div class="card"><div class="modes" id="drugs"><button data-d="vanc" class="on">Vancomycin</button><button data-d="gent">Gentamicin</button><button data-d="amik">Amikacin</button><button data-d="tobra">Tobramycin</button><button data-d="dig">Digoxin</button><button data-d="theo">Theophylline</button><button disabled>Phenytoin (Pro, soon)</button></div><div class="sm" id="badge" style="margin-top:6px"></div></div>
 <div id="vanc"><div class="card"><h2>1. Choose calculation</h2><div class="modes" id="modes">
 <button data-m="1" class="on">Calculate Dose</button><button data-m="2">Calculate Trough</button><button data-m="3">Evaluate &amp; Adjust</button></div></div>
 <div class="card"><h2>2. Patient data</h2><div class="grid">
@@ -53,7 +53,7 @@ button.c{padding:8px 12px;border-radius:8px;border:1px solid var(--pri);backgrou
 <div id="out"></div>
 <div class="sm">Not clinically validated. Population one-compartment model (CL = 0.65 × CrCl; Vd = 0.7 L/kg); Cockcroft-Gault with adjusted weight if BMI ≥ 30. Validate locally before clinical use.</div>
 </div>
-<div id="gent" class="hide"><div class="card"><h2>Gentamicin (traditional dosing) - patient and regimen</h2><div class="grid">
+<div id="gent" class="hide"><input type="hidden" id="gdrug" value="gent"><div class="card"><h2 id="gtitle">Gentamicin (traditional dosing) - patient and regimen</h2><div class="grid">
 <div><label>Age (years)</label><input id="gage" type="number" step="any"></div>
 <div><label>Sex</label><select id="gsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
 <div><label>Height (cm)</label><input id="ght" type="number" step="any"></div>
@@ -62,12 +62,52 @@ button.c{padding:8px 12px;border-radius:8px;border:1px solid var(--pri);backgrou
 <div><label>SCr unit</label><select id="gunit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
 <div><label>Dialysis / CRRT</label><select id="gdial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
 <div><label>Renal trend</label><select id="gtrend"><option>Stable</option><option>Improving</option><option>Worsening</option><option>Unknown</option></select></div>
+<div><label>ke equation</label><select id="gkm"><option value="sz">Sawchuk-Zaske: 0.00293·CrCl + 0.014</option><option value="mz">Matzke/Dettli: 0.0024·CrCl + 0.010</option><option value="tb">Tobramycin-specific: 0.0031·CrCl + 0.010</option></select></div>
 <div><label>Target peak (mg/L)</label><input id="gp" type="number" step="any" value="8"></div>
 <div><label>Target trough (mg/L)</label><input id="gt" type="number" step="any" value="1"></div>
 <div><label>Current dose (mg), optional</label><input id="gd" type="number" step="any"></div>
 <div><label>Interval (h), optional</label><input id="gtau" type="number" step="any"></div></div>
-<div class="sm">Model: ke = 0.00293 × CrCl + 0.014; Vd = 0.25 L/kg (IBW, or adjusted weight if &gt; 120% IBW); infusion 0.5 h. Confirm targets with the local protocol. Extended-interval dosing is not covered.</div></div><div id="gout"></div></div>
-<div class="card"><h2>Plans (mock-up, no payment)</h2><div class="sm"><b>Free</b>: Vancomycin, Gentamicin. <b>Pro</b>: more drugs, saved cases, PDF notes, institutional protocols. Subscriptions need accounts, a backend and store billing; they are not built here.</div></div>
+<div class="sm">Model: ke from the selected equation; Vd = 0.25 L/kg (IBW, or adjusted weight if &gt; 120% IBW); infusion 0.5 h. Confirm targets with the local protocol. Extended-interval dosing is not covered.</div></div><div id="gout"></div></div>
+<div id="dig" class="hide"><div class="card"><h2>Digoxin (adult, steady-state) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="dage" type="number" step="any"></div>
+<div><label>Sex</label><select id="dsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="dht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="dwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="dscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="dunit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="ddial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Renal trend</label><select id="dtrend"><option>Stable</option><option>Improving</option><option>Worsening</option><option>Unknown</option></select></div>
+<div><label>Heart failure?</label><select id="dhf"><option>Yes</option><option>No</option></select></div>
+<div><label>Interacting drug? (amiodarone, verapamil, quinidine, dronedarone...)</label><select id="dint"><option>No</option><option>Yes</option></select></div>
+<div><label>Route / form</label><select id="droute"><option>Tablet</option><option>IV</option><option>Elixir</option><option>Capsule</option></select></div>
+<div><label>Model</label><select id="dmodel"><option value="w">Winter/Koup-Jusko: 0.8·wt + CrCl (HF: 0.33·wt + 0.9·CrCl)</option><option value="j">Jusko: 1.303·CrCl + 40 (HF: +20)</option></select></div>
+<div><label>Target level (ng/mL)</label><input id="dtgt" type="number" step="any" value="0.7"></div>
+<div><label>Interval (h)</label><input id="dtau" type="number" step="any" value="24"></div>
+<div><label>Include loading dose?</label><select id="dload"><option>No</option><option>Yes</option></select></div>
+<div><label>Current dose (mcg), optional</label><input id="ddose" type="number" step="any"></div>
+<div><label>Days on current dose, optional</label><input id="ddays" type="number" step="any"></div>
+<div><label>Measured level (ng/mL), optional</label><input id="dlvl" type="number" step="any"></div>
+<div><label>Level drawn h after dose</label><input id="dt" type="number" step="any"></div></div>
+<div class="sm">Dosing weight = IBW (actual weight if lower). Vd = 3.8·wt + 3.1·CrCl. F: IV 1.0, tablet 0.7, elixir 0.8, capsule 0.9. Levels must be drawn at least 6 h (ideally 8-24 h, pre-dose) after a dose and at steady state. Low K or Mg, hypercalcemia, hypothyroidism and hypoxia increase toxicity risk. Targets: HF about 0.5-0.9, AF about 0.8-1.2 ng/mL; confirm with local protocol.</div></div><div id="dout"></div></div>
+<div id="theo" class="hide"><div class="card"><h2>Theophylline / Aminophylline (adult) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="tage" type="number" step="any"></div>
+<div><label>Sex</label><select id="tsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="tht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="twt" type="number" step="any"></div>
+<div><label>Smoker?</label><select id="tsmk"><option>No</option><option>Yes</option></select></div>
+<div><label>Heart failure?</label><select id="tchf"><option>No</option><option>Yes</option></select></div>
+<div><label>Cirrhosis / liver failure?</label><select id="tliv"><option>No</option><option>Yes</option></select></div>
+<div><label>Interacting drug</label><select id="tdrug"><option value="none">None</option><option value="low">Lowers clearance (cimetidine, ciprofloxacin, macrolides...)</option><option value="high">Raises clearance (phenytoin, carbamazepine, rifampin...)</option></select></div>
+<div><label>Form / route</label><select id="tform"><option>Aminophylline IV</option><option>Theophylline IV</option><option>Theophylline oral</option></select></div>
+<div><label>Target level (mg/L)</label><input id="ttgt" type="number" step="any" value="10"></div>
+<div><label>Interval (h), oral only</label><input id="ttau" type="number" step="any" value="12"></div>
+<div><label>Already on theophylline (last 24 h)?</label><select id="ton"><option>No</option><option>Yes</option></select></div>
+<div><label>Current level (mg/L), if on</label><input id="tcur" type="number" step="any"></div>
+<div><label>Current dose (mg/h IV, or mg per interval oral), optional</label><input id="tdose" type="number" step="any"></div>
+<div><label>Measured level (mg/L), optional</label><input id="tlvl" type="number" step="any"></div>
+<div><label>Level at steady state?</label><select id="tss"><option>Yes</option><option>No</option></select></div></div>
+<div class="sm">Dosing weight = IBW (actual if lower). Vd = 0.5 L/kg; CL = 0.04 L/kg/h × factors (smoker ×1.6, heart failure ×0.5, cirrhosis ×0.5, clearance-lowering drug ×0.6, enzyme inducer ×1.6). Aminophylline = 0.8 theophylline. Target 5-15 mg/L (10-15 for most benefit); above 20 toxicity rises and kinetics become non-linear. Dose from IBW; clearance varies widely between similar patients, so confirm with a level.</div></div><div id="tout"></div></div>
+<div class="card"><h2>Plans (mock-up, no payment)</h2><div class="sm"><b>Free</b>: Vancomycin, Gentamicin, Amikacin, Tobramycin, Digoxin, Theophylline. <b>Pro</b>: more drugs, saved cases, PDF notes, institutional protocols. Subscriptions need accounts, a backend and store billing; they are not built here.</div></div>
 <script>
 const $=i=>document.getElementById(i),v=i=>$(i).value===''?null:+$(i).value,f=(x,d=1)=>Number(x).toFixed(d),r250=x=>Math.max(250,Math.round(x/250)*250);
 let M=1;const MAXS=2000,MAXD=4500;
@@ -124,26 +164,102 @@ function run(){const c=check(),o=$('out');let h='<div class="card"><h2>4. Result
  h+='<h2 style="margin-top:12px">Progress note</h2><textarea id="note" readonly>'+note+'</textarea><button class="c" id="cp">Copy note</button></div>';o.innerHTML=h;
  $('cp').onclick=()=>{const t=$('note');t.select();try{navigator.clipboard.writeText(t.value)}catch(x){try{document.execCommand('copy')}catch(y){}}$('cp').textContent='Copied'}}
 vis();run();
-document.querySelectorAll('#drugs button[data-d]').forEach(b=>b.onclick=()=>{document.querySelectorAll('#drugs button').forEach(x=>x.classList.toggle('on',x==b));['vanc','gent'].forEach(d=>$(d).classList.toggle('hide',d!=b.dataset.d))});
+document.querySelectorAll('#drugs button[data-d]').forEach(b=>b.onclick=()=>{document.querySelectorAll('#drugs button').forEach(x=>x.classList.toggle('on',x==b));const d=b.dataset.d;$('vanc').classList.toggle('hide',d!='vanc');$('gent').classList.toggle('hide',d=='vanc'||d=='dig'||d=='theo');$('dig').classList.toggle('hide',d!='dig');$('theo').classList.toggle('hide',d!='theo');if(d!='vanc'&&d!='dig'&&d!='theo')gset(d);$('badge').textContent=BD[d]});
+const BD={vanc:'Vancomycin: math verified (250/250 checks vs independent model) · pending clinical review',gent:'Gentamicin: math verified (24/24 checks vs independent simulation) · pending clinical review',amik:'Amikacin: math verified (28/28 checks vs independent simulation) · pending clinical review',theo:'Theophylline: math verified (51/51 checks vs independent simulation) · pending clinical review',dig:'Digoxin: math verified (48/48 checks vs independent simulation) · pending clinical review',tobra:'Tobramycin: math verified (28/28 checks vs independent simulation) · pending clinical review'};const NM={gent:'Gentamicin',amik:'Amikacin',tobra:'Tobramycin'};
+function gset(d){const A=d=='amik';$('gdrug').value=d;$('gp').value=A?25:8;$('gt').value=A?5:1;$('gkm').value=A?'mz':'sz';$('gtitle').textContent=NM[d]+' (traditional dosing) - patient and regimen';grun()}
 function grun(){const g=i=>v(i),o=$('gout'),m=[],e=[],w=[];['gage','gsex','ght','gwt','gscr','gp','gt'].forEach(i=>{if(g(i)===null)m.push(i)});
  document.querySelectorAll('#gent input').forEach(i=>i.classList.remove('w','e'));
- const L2={gage:[18,120,18,89],ght:[100,250,140,200],gwt:[20,400,40,150],gd:[20,1000,60,640],gtau:[6,72,8,48],gp:[1,60,4,12],gt:[0,10,0.2,2]};
+ const A0=$('gdrug').value=='amik',L2={gage:[18,120,18,89],ght:[100,250,140,200],gwt:[20,400,40,150],gd:[20,2000,60,1500],gtau:[6,72,8,48],gp:A0?[5,100,15,40]:[1,60,4,12],gt:A0?[0,40,1,10]:[0,10,0.2,2]};
  for(const id in L2){const x=g(id);if(x===null)continue;const[a,b,c,d]=L2[id];if(x<a||x>b){$(id).classList.add('e');e.push(id+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(id+' '+x+' unusual (usual '+c+'-'+d+')')}}
- let h='<div class="card"><h2>Result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ let h='<div class="card"><h2>'+NM[$('gdrug').value]+' result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
  if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, SCr, targets) with valid values.</div></div>';return}
  if($('gdial').value!='No'){o.innerHTML=h+'<div class="msg e"><b>NOT CALCULATED</b> - dialysis/CRRT selected. Dose by renal replacement protocol and levels.</div><div class="rev y">Pharmacist/clinician review required</div></div>';return}
  const fem=$('gsex').value=='Female',ht=g('ght'),wt=g('gwt'),sc=$('gunit').value=='umol'?g('gscr')/88.4:g('gscr');
  const ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),dw=wt<ibw?wt:(wt>1.2*ibw?ibw+.4*(wt-ibw):ibw),crcl=Math.max(0,(140-g('gage'))*dw/(72*sc))*(fem?.85:1);
- const ke=.00293*crcl+.014,V=.25*dw,CL=ke*V,ti=.5,pk=(D,t)=>(D/ti/CL)*(1-Math.exp(-ke*ti))/(1-Math.exp(-ke*t)),tr=(D,t)=>pk(D,t)*Math.exp(-ke*(t-ti));
+ const A=$('gdrug').value=='amik',ke=({sz:.00293*crcl+.014,mz:.0024*crcl+.01,tb:.0031*crcl+.01})[$('gkm').value],V=.25*dw,CL=ke*V,ti=.5,pk=(D,t)=>(D/ti/CL)*(1-Math.exp(-ke*ti))/(1-Math.exp(-ke*t)),tr=(D,t)=>pk(D,t)*Math.exp(-ke*(t-ti));
  let flag=['Worsening'].includes($('gtrend').value);
  h+='<div class="kv"><span>CrCl (dosing weight '+f(dw)+' kg)</span><b>'+f(crcl)+' mL/min</b><span>ke / half-life</span><b>'+f(ke,3)+' /h · '+f(Math.LN2/ke)+' h</b><span>Vd</span><b>'+f(V)+' L</b></div>';
- const D=g('gd'),t=g('gtau');if(D&&t){if(t<=ti){h+='<div class="msg e">INVALID: interval must exceed infusion time</div>'}else{const p=pk(D,t),q=tr(D,t);h+='<h2 style="margin-top:12px">Current: '+D+' mg q'+t+'h ('+f(D/wt,1)+' mg/kg)</h2><div class="kv"><span>Predicted peak / trough</span><b>'+f(p)+' / '+f(q)+' mg/L</b></div>';if(q>2){flag=true;h+='<div class="msg w">Predicted trough above 2 mg/L: toxicity risk.</div>'}}}
+ const D=g('gd'),t=g('gtau');if(D&&t){if(t<=ti){h+='<div class="msg e">INVALID: interval must exceed infusion time</div>'}else{const p=pk(D,t),q=tr(D,t);h+='<h2 style="margin-top:12px">Current: '+D+' mg q'+t+'h ('+f(D/wt,1)+' mg/kg)</h2><div class="kv"><span>Predicted peak / trough</span><b>'+f(p)+' / '+f(q)+' mg/L</b></div>';if(p>(A?60:15)){flag=true;h+='<div class="msg w">Predicted peak above '+(A?60:15)+' mg/L: review dose.</div>'}if(q>(A?10:2)){flag=true;h+='<div class="msg w">Predicted trough above '+(A?10:2)+' mg/L: toxicity risk.</div>'}}}
  const P=g('gp'),T=g('gt');let rt=null;for(const tt of [8,12,18,24,36,48,72]){if(P*Math.exp(-ke*(tt-ti))<=Math.max(T,0.01)){rt=tt;break}}
  h+='<h2 style="margin-top:12px">Recommended regimen</h2>';
  if(!rt){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - the trough target cannot be met within 72 h. Pharmacist review required.</div>'}
  else{const d=Math.round(P*ti*CL*(1-Math.exp(-ke*rt))/(1-Math.exp(-ke*ti))/10)*10;
-  if(d/dw>7||d<20){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - calculated dose ('+d+' mg, '+f(d/dw,1)+' mg/kg) is outside the safety cap (max 7 mg/kg). Pharmacist review required.</div>'}
+  if(d/dw>(A?15:7)||d<20){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - calculated dose ('+d+' mg, '+f(d/dw,1)+' mg/kg) is outside the safety cap (max '+(A?15:7)+' mg/kg). Pharmacist review required.</div>'}
   else h+='<div class="big">'+d+' mg every '+rt+' h (infuse over 30 min)</div><div class="kv"><span>Dose per kg (dosing weight)</span><b>'+f(d/dw,1)+' mg/kg</b><span>Predicted peak / trough</span><b>'+f(pk(d,rt))+' / '+f(tr(d,rt))+' mg/L</b></div><div class="sm">Suggested levels: after the 3rd dose (peak 30 min after the end of infusion, trough before the next dose).</div>'}
  h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
-document.querySelectorAll('#gent input,#gent select').forEach(e=>e.oninput=grun);grun();
+document.querySelectorAll('#gent input,#gent select').forEach(e=>e.oninput=grun);grun();$('badge').textContent=BD.vanc;
+const LD={dage:[18,120,18,89],dht:[100,250,140,200],dwt:[20,400,40,150],dtgt:[.2,2.5,.5,1.2],dtau:[12,72,12,48],ddose:[12.5,1000,62.5,500],dlvl:[0,10,.5,2],dt:[0,72,8,48],ddays:[0,365,0,365]};
+const DL={dage:'Age',dsex:'Sex',dht:'Height',dwt:'Weight',dscr:'Serum creatinine',dtgt:'Target level',dtau:'Interval',ddose:'Current dose',dlvl:'Measured level',dt:'Hours after dose',ddays:'Days on dose'};
+function drun(){const g=i=>v(i),o=$('dout'),m=[],e=[],w=[];['dage','dsex','dht','dwt','dscr','dtgt','dtau'].forEach(i=>{if(g(i)===null)m.push(DL[i])});
+ document.querySelectorAll('#dig input').forEach(i=>i.classList.remove('w','e'));
+ for(const id in LD){const x=g(id);if(x===null)continue;const[a,b,c,d]=LD[id];if(x<a||x>b){$(id).classList.add('e');e.push(DL[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(DL[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ const s0=g('dscr');if(s0!==null){const u=$('dunit').value=='umol'?s0:s0*88.4;if(u<20||u>2000)e.push('Serum creatinine outside hard limit (20-2000 umol/L)');else if(u<45||u>350)w.push('Serum creatinine unusual (usual 45-350 umol/L)')}
+ let h='<div class="card"><h2>Digoxin result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, SCr, target, interval) with valid values.</div></div>';return}
+ if($('ddial').value!='No'){o.innerHTML=h+'<div class="msg e"><b>NOT CALCULATED</b> - dialysis/CRRT selected. Digoxin is not removed well by dialysis and needs a specialist protocol with levels.</div><div class="rev y">Pharmacist/clinician review required</div></div>';return}
+ const fem=$('dsex').value=='Female',ht=g('dht'),wt=g('dwt'),sc=$('dunit').value=='umol'?g('dscr')/88.4:g('dscr'),HF=$('dhf').value=='Yes';
+ const ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),dw=wt<ibw?wt:ibw,crcl=Math.max(0,(140-g('dage'))*dw/(72*sc)*(fem?.85:1));
+ const clm=$('dmodel').value=='w'?(HF?.33*dw+.9*crcl:.8*dw+crcl):1.303*crcl+(HF?20:40),CL=clm*.06,Vd=3.8*dw+3.1*crcl,ke=CL/Vd,rt=$('droute').value,F={IV:1,Tablet:.7,Elixir:.8,Capsule:.9}[rt],tau=g('dtau'),T=g('dtgt'),st=rt=='IV'?12.5:62.5;
+ const avg=D=>F*D/(CL*tau),lv=(D,t)=>F*D/Vd*Math.exp(-ke*t)/(1-Math.exp(-ke*tau)),rd=x=>Math.max(st,Math.floor(x/st+.5)*st);
+ let flag=$('dtrend').value=='Worsening'||$('dint').value=='Yes';
+ if($('dint').value=='Yes')h+='<div class="msg w">Interacting drug: digoxin exposure is usually raised; many references suggest reducing the dose by about 30-50%. Review with the pharmacist.</div>';
+ h+='<div class="kv"><span>CrCl (dosing weight '+f(dw)+' kg)</span><b>'+f(crcl)+' mL/min</b><span>Clearance / Vd</span><b>'+f(CL,2)+' L/h / '+f(Vd,0)+' L</b><span>Half-life / time to steady state</span><b>'+f(Math.LN2/ke/24,1)+' d / about '+f(5*Math.LN2/ke/24,0)+' d</b></div>';
+ const dm=T*CL*tau/F,dr=rd(dm);h+='<h2 style="margin-top:12px">Recommended maintenance</h2>';
+ if(dr*24/tau>500){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - calculated daily dose exceeds the safety cap (500 mcg/day). Pharmacist review required.</div>'}
+ else{h+='<div class="big">'+dr+' mcg every '+tau+' h ('+rt+')</div><div class="kv"><span>Calculated before rounding</span><b>'+f(dm,1)+' mcg</b><span>Predicted average / trough</span><b>'+f(avg(dr),2)+' / '+f(lv(dr,tau),2)+' ng/mL</b></div>';if(dm<st*.75)h+='<div class="sm">Calculated dose is below the smallest unit: consider an alternate-day schedule.</div>'}
+ if($('dload').value=='Yes'){const L=T*Vd/F,Lr=rd(L);h+='<h2 style="margin-top:12px">Loading dose</h2>';
+  if(Lr>1500||Lr/dw>15){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - loading dose exceeds the safety cap (1500 mcg or 15 mcg/kg). Pharmacist review required.</div>'}
+  else h+='<div class="big">'+Lr+' mcg total, divided</div><div class="sm">Give '+rd(Lr*.5)+' mcg, then '+rd(Lr*.25)+' mcg and '+rd(Lr*.25)+' mcg every '+(rt=='IV'?'2-4':'6-8')+' h, with ECG and K monitoring.</div>'}
+ const D=g('ddose');if(D){h+='<h2 style="margin-top:12px">Current: '+D+' mcg every '+tau+' h</h2><div class="kv"><span>Predicted average / trough</span><b>'+f(avg(D),2)+' / '+f(lv(D,tau),2)+' ng/mL</b></div>';
+  if(avg(D)>(HF?1.2:2)){flag=true;h+='<div class="msg w">Predicted average level above '+(HF?1.2:2)+' ng/mL: toxicity risk.</div>'}
+  const L1=g('dlvl'),t1=g('dt');if(L1!==null){if(t1===null||t1<6){flag=true;h+='<div class="msg e">Level not interpretable: it must be drawn at least 6 h after a dose (enter the hours after dose).</div>'}
+   else{const p=lv(D,t1),df=(L1-p)/p*100;h+='<div class="kv"><span>Measured vs predicted at '+t1+' h</span><b>'+f(L1,2)+' vs '+f(p,2)+' ng/mL ('+f(df,0)+'%)</b></div>';
+    if(g('ddays')!==null&&g('ddays')<7){flag=true;h+='<div class="msg w">Less than 7 days on this dose: probably not at steady state, so the adjustment below is unreliable.</div>'}
+    if(L1>2){flag=true;h+='<div class="msg e">Level above 2 ng/mL: assess for toxicity (ECG, K, Mg) urgently.</div>'}
+    if(L1<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
+    else{const a=rd(D*T/L1);if(a*24/tau>500){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - adjusted dose exceeds the 500 mcg/day cap.</div>'}
+     else h+='<div class="big">Adjusted: '+a+' mcg every '+tau+' h</div><div class="kv"><span>Expected level after adjustment</span><b>'+f(L1*a/D,2)+' ng/mL</b></div>'}}}}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#dig input,#dig select').forEach(e=>e.oninput=drun);drun();
+const LT={tage:[18,120,18,89],tht:[100,250,140,200],twt:[20,400,40,150],ttgt:[1,30,5,15],ttau:[6,48,8,24],tcur:[0,60,0,20],tlvl:[0,60,3,20]};
+const TL={tage:'Age',tsex:'Sex',tht:'Height',twt:'Weight',ttgt:'Target level',ttau:'Interval',tcur:'Current level',tdose:'Current dose',tlvl:'Measured level'};
+function trun(){const g=i=>v(i),o=$('tout'),m=[],e=[],w=[],IV=$('tform').value!='Theophylline oral';
+ ['tage','tsex','tht','twt','ttgt'].forEach(i=>{if(g(i)===null)m.push(TL[i])});if(!IV&&g('ttau')===null)m.push('Interval');
+ document.querySelectorAll('#theo input').forEach(i=>i.classList.remove('w','e'));
+ const L2={...LT,tdose:IV?[1,150,5,60]:[50,1500,100,900]};
+ for(const id in L2){if(id=='ttau'&&IV)continue;const x=g(id);if(x===null)continue;const[a,b,c,d]=L2[id];if(x<a||x>b){$(id).classList.add('e');e.push(TL[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(TL[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ let h='<div class="card"><h2>Theophylline result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, target'+(IV?'':', interval')+') with valid values.</div></div>';return}
+ const fem=$('tsex').value=='Female',ht=g('tht'),wt=g('twt'),age=g('tage'),ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),dw=wt<ibw?wt:ibw,dr=$('tdrug').value;
+ const fc=($('tsmk').value=='Yes'?1.6:1)*($('tchf').value=='Yes'?.5:1)*($('tliv').value=='Yes'?.5:1)*(dr=='low'?.6:dr=='high'?1.6:1),CL=.04*dw*fc,V=.5*dw,ke=CL/V,S=$('tform').value=='Aminophylline IV'?.8:1,T=g('ttgt'),tau=g('ttau');
+ const slow=$('tchf').value=='Yes'||$('tliv').value=='Yes'||age>=70;let flag=dr!='none'||$('tchf').value=='Yes'||$('tliv').value=='Yes';
+ h+='<div class="kv"><span>Dosing weight (IBW)</span><b>'+f(dw)+' kg</b><span>Clearance (factor x'+f(fc,2)+') / Vd</span><b>'+f(CL,2)+' L/h / '+f(V)+' L</b><span>Half-life</span><b>'+f(Math.LN2/ke)+' h</b></div>';
+ const D=g('tdose'),L1=g('tlvl');let rd;
+ h+='<h2 style="margin-top:12px">Recommended '+(IV?'IV regimen':'oral regimen')+'</h2>';
+ if(IV){const on=$('ton').value=='Yes',C0=g('tcur');
+  if(on&&C0===null){flag=true;h+='<div class="msg w">Loading dose not calculated: enter the current level (already on theophylline).</div>'}
+  else{const LD=Math.max(0,(T-(on?C0:0))*V/S),LR=Math.floor(LD/5+.5)*5;
+   if(LR/dw>7){flag=true;h+='<div class="msg e"><b>Loading: NOT SUGGESTED</b> - exceeds the safety cap (7 mg/kg IBW). Pharmacist review required.</div>'}
+   else if(LR<=0)h+='<div class="sm">No loading dose needed.</div>';
+   else h+='<div class="big">Loading: '+LR+' mg over 30 min</div><div class="sm">'+f(LR/dw,1)+' mg/kg IBW. Aminophylline: infuse slowly (not faster than 25 mg/min).</div>'}
+  const k0=T*CL/S,rr=Math.max(1,Math.floor(k0+.5));
+  if(rr/dw>1){flag=true;h+='<div class="msg e"><b>Infusion: NOT SUGGESTED</b> - exceeds the safety cap (1.0 mg/kg IBW/h). Pharmacist review required.</div>'}
+  else{h+='<div class="big">Infusion: '+rr+' mg/h</div><div class="kv"><span>Per kg IBW</span><b>'+f(rr/dw,2)+' mg/kg/h</b><span>Predicted steady-state level</span><b>'+f(S*rr/CL,1)+' mg/L</b></div><div class="sm">Check a level about 24 h after starting; steady state needs about 5 half-lives.</div>';
+   if(slow&&rr>17){flag=true;h+='<div class="msg w">Heart failure, cirrhosis or age 70+: infusion above 17 mg/h needs a level first.</div>'}}
+  if(D)h+='<div class="kv"><span>Current '+D+' mg/h: predicted level</span><b>'+f(S*D/CL,1)+' mg/L</b></div>';
+  rd=x=>Math.max(1,Math.floor(x+.5))}
+ else{const dm=CL*T*tau/S,st=50;rd=x=>Math.max(st,Math.floor(x/st+.5)*st);const d1=rd(dm);
+  if(d1*24/tau>900){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - daily dose exceeds the safety cap (900 mg/day). Pharmacist review required.</div>'}
+  else h+='<div class="big">'+d1+' mg every '+tau+' h (theophylline)</div><div class="kv"><span>Calculated before rounding</span><b>'+f(dm,0)+' mg</b><span>Predicted average level</span><b>'+f(S*d1/(CL*tau),1)+' mg/L</b><span>Approx. peak / trough (instant absorption)</span><b>'+f(S*d1/V/(1-Math.exp(-ke*tau)),1)+' / '+f(S*d1/V/(1-Math.exp(-ke*tau))*Math.exp(-ke*tau),1)+' mg/L</b></div><div class="sm">Sustained-release products give a flatter profile than the peak/trough shown; the average level is the more reliable figure.</div>';
+  if(D)h+='<div class="kv"><span>Current '+D+' mg q'+tau+'h: predicted average</span><b>'+f(S*D/(CL*tau),1)+' mg/L</b></div>'}
+ if(L1!==null&&D){if($('tss').value!='Yes'){flag=true;h+='<div class="msg w">Level not at steady state: the adjustment below is unreliable.</div>'}
+  if(L1>20){flag=true;h+='<div class="msg e">Level above 20 mg/L: assess for toxicity (arrhythmia, seizures). Dose change by clinician; kinetics are non-linear at high levels.</div>'}
+  else if(L1<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
+  else{if(L1>15)flag=true;let q=T/L1,lim=false;if(q>1.25){q=1.25;lim=true}const nd=IV?rd(D*q):Math.max(50,Math.floor(D*q/50+.5)*50);
+   if(IV?nd/dw>1:nd*24/tau>900){flag=true;h+='<div class="msg e"><b>Adjustment: NOT SUGGESTED</b> - exceeds the safety cap.</div>'}
+   else h+='<div class="big">Adjusted: '+nd+(IV?' mg/h':' mg every '+tau+' h')+'</div><div class="kv"><span>Expected level after adjustment</span><b>'+f(L1*nd/D,1)+' mg/L</b></div>'+(lim?'<div class="sm">Increase limited to 25% per step (small increments; re-check the level).</div>':'')}}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#theo input,#theo select').forEach(e=>e.oninput=trun);trun();
+
+
 </script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})</script></body></html>

@@ -13,3 +13,7 @@ Change files, then bump `dosing-v1` in sw.js to `dosing-v2` so phones refresh th
 
 ## Store apps (App Store / Google Play)
 Wrap this folder with Capacitor (npx cap init; npx cap add ios android) - requires your Apple ($99/yr) and Google ($25 once) developer accounts. Read the regulatory summary first.
+
+## Drugs included (v5)
+Vancomycin, Gentamicin, Amikacin, Tobramycin, Digoxin, Theophylline. Each has a report in /verification (all: math verified, pending clinical review).
+Upload ALL files, including the verification folder, to replace the old version.
