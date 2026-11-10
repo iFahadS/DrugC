@@ -1,55 +1,523 @@
-Clinical Dosing Suite prototype
-Adult intermittent IV vancomycin. Decision support only: it does not replace clinical judgement or hospital protocol. Prototype: not clinically validated.
-Vancomycin
-Gentamicin
-Amikacin
-Tobramycin
-Digoxin
-Theophylline
-Phenytoin
-Tacrolimus
-Cyclosporine
-Linezolid
-Fluconazole
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Clinical Dosing Suite (prototype)</title>
+<meta name="theme-color" content="#1f3864"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--tx:#1b2433;--mut:#5d6b82;--bd:#d5dbe6;--pri:#1f3864;--ok:#2e7d32;--wn:#c26a00;--er:#c62828;--a:#1f6fd1;--b:#d9822b;--in:#fffbe6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121722;--card:#1b2332;--tx:#e6ebf5;--mut:#9aa8c0;--bd:#33405a;--pri:#8fb2ff;--ok:#6fcf74;--wn:#ffb04d;--er:#ff7b72;--a:#6aa8ff;--b:#ffb04d;--in:#2a2f1c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121722;--card:#1b2332;--tx:#e6ebf5;--mut:#9aa8c0;--bd:#33405a;--pri:#8fb2ff;--ok:#6fcf74;--wn:#ffb04d;--er:#ff7b72;--a:#6aa8ff;--b:#ffb04d;--in:#2a2f1c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:760px;margin-inline:auto;padding:12px}
+h1{font-size:20px;margin:6px 0;color:var(--pri)}h2{font-size:16px;margin:0 0 8px;color:var(--pri)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:10px 0}
+.modes{display:flex;gap:6px;flex-wrap:wrap}.modes button{flex:1 1 200px;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font-weight:600;cursor:pointer}
+.modes button.on{background:var(--pri);color:var(--bg);border-color:var(--pri)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+label{display:block;font-size:12px;color:var(--mut)}input,select{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--in);color:var(--tx);font-size:15px}
+input.w{border-color:var(--wn);box-shadow:0 0 0 1px var(--wn)}input.e{border-color:var(--er);box-shadow:0 0 0 1px var(--er)}
+.msg{padding:6px 8px;border-radius:8px;margin:4px 0;font-size:13px}.msg.e{border:1px solid var(--er);color:var(--er)}.msg.w{border:1px solid var(--wn);color:var(--wn)}.msg.m{border:1px dashed var(--bd);color:var(--mut)}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px}.kv b{text-align:right}.big{font-size:18px;font-weight:700;color:var(--pri)}
+.rev{font-weight:700}.rev.y{color:var(--er)}.rev.n{color:var(--ok)}
+svg{width:100%;height:auto;max-width:100%}textarea{width:100%;height:150px;box-sizing:border-box;background:var(--in);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px}
+button.c{padding:8px 12px;border-radius:8px;border:1px solid var(--pri);background:transparent;color:var(--pri);cursor:pointer}.sm{font-size:12px;color:var(--mut)}
+.hide{display:none}
+</style></head><body>
+<h1>Clinical Dosing Suite <span class="sm">prototype</span></h1>
+<div class="sm">Adult intermittent IV vancomycin. Decision support only: it does not replace clinical judgement or hospital protocol. Prototype: not clinically validated.</div>
+<div class="card"><div class="modes" id="drugs"><button data-d="vanc" class="on">Vancomycin</button><button data-d="gent">Gentamicin</button><button data-d="amik">Amikacin</button><button data-d="tobra">Tobramycin</button><button data-d="dig">Digoxin</button><button data-d="theo">Theophylline</button><button data-d="phen">Phenytoin</button><button data-d="tacro">Tacrolimus</button><button data-d="cyclo">Cyclosporine</button><button data-d="linez">Linezolid</button><button data-d="fluc">Fluconazole</button></div><div class="sm" id="badge" style="margin-top:6px"></div></div>
+<div id="vanc"><div class="card"><h2>1. Choose calculation</h2><div class="modes" id="modes">
+<button data-m="1" class="on">Calculate Dose</button><button data-m="2">Calculate Trough</button><button data-m="3">Evaluate &amp; Adjust</button></div></div>
+<div class="card"><h2>2. Patient data</h2><div class="grid">
+<div><label>Age (years)</label><input id="age" type="number" step="any"></div>
+<div><label>Sex</label><select id="sex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="ht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="wt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="scr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="unit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Renal trend</label><select id="trend"><option>Stable</option><option>Improving</option><option>Worsening</option><option>Unknown</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="dial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>ICU?</label><select id="icu"><option>No</option><option>Yes</option></select></div>
+<div><label>Sepsis / shock?</label><select id="sep"><option>No</option><option>Yes</option></select></div>
+<div><label>Nephrotoxins?</label><select id="neph"><option>No</option><option>Yes</option></select></div></div></div>
+<div class="card"><h2>3. Regimen, targets and levels</h2><div class="grid">
+<div data-m="2 3"><label>Current dose (mg)</label><input id="dose" type="number" step="any"></div>
+<div><label>Interval (h)</label><input id="tau" type="number" step="any"></div>
+<div><label>Infusion time (h)</label><input id="ti" type="number" step="any"></div>
+<div><label>MIC (mg/L)</label><input id="mic" type="number" step="any" value="1"></div>
+<div data-m="1 3"><label>Target AUC24 (mg·h/L)</label><input id="tauc" type="number" step="any" value="500"></div>
+<div data-m="1 3"><label>Target trough (mg/L)</label><input id="ttr" type="number" step="any" value="15"></div>
+<div><label>Include loading dose?</label><select id="vld"><option>No</option><option>Yes</option></select></div>
+<div data-m="3"><label>Level 1 (mg/L)</label><input id="l1" type="number" step="any"></div>
+<div data-m="3"><label>Level 1: h after END of infusion</label><input id="t1" type="number" step="any"></div>
+<div data-m="3"><label>Level 2, optional (mg/L)</label><input id="l2" type="number" step="any"></div>
+<div data-m="3"><label>Level 2: h after END of infusion</label><input id="t2" type="number" step="any"></div></div>
+<div class="sm" data-m="3">Levels must be at steady state. A pre-dose trough is drawn (interval − infusion time) h after the end of infusion. One level: individual clearance is fitted; two levels: Sawchuk-Zaske.</div></div>
+<div id="out"></div>
+<div class="sm">Not clinically validated. Population one-compartment model (CL = 0.65 × CrCl; Vd = 0.7 L/kg); Cockcroft-Gault with adjusted weight if BMI ≥ 30. Validate locally before clinical use.</div>
+</div>
+<div id="gent" class="hide"><input type="hidden" id="gdrug" value="gent"><div class="card"><h2 id="gtitle">Gentamicin (traditional dosing) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="gage" type="number" step="any"></div>
+<div><label>Sex</label><select id="gsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="ght" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="gwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="gscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="gunit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="gdial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Renal trend</label><select id="gtrend"><option>Stable</option><option>Improving</option><option>Worsening</option><option>Unknown</option></select></div>
+<div><label>ke equation</label><select id="gkm"><option value="sz">Sawchuk-Zaske: 0.00293·CrCl + 0.014</option><option value="mz">Matzke/Dettli: 0.0024·CrCl + 0.010</option><option value="tb">Tobramycin-specific: 0.0031·CrCl + 0.010</option></select></div>
+<div><label>Target peak (mg/L)</label><input id="gp" type="number" step="any" value="8"></div>
+<div><label>Target trough (mg/L)</label><input id="gt" type="number" step="any" value="1"></div>
+<div><label>Current dose (mg), optional</label><input id="gd" type="number" step="any"></div>
+<div><label>Interval (h), optional</label><input id="gtau" type="number" step="any"></div></div>
+<div class="sm">Model: ke from the selected equation; Vd = 0.25 L/kg (IBW, or adjusted weight if &gt; 120% IBW); infusion 0.5 h. Confirm targets with the local protocol. Extended-interval dosing is not covered.</div></div><div id="gout"></div></div>
+<div id="dig" class="hide"><div class="card"><h2>Digoxin (adult, steady-state) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="dage" type="number" step="any"></div>
+<div><label>Sex</label><select id="dsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="dht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="dwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="dscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="dunit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="ddial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Renal trend</label><select id="dtrend"><option>Stable</option><option>Improving</option><option>Worsening</option><option>Unknown</option></select></div>
+<div><label>Heart failure?</label><select id="dhf"><option>Yes</option><option>No</option></select></div>
+<div><label>Interacting drug? (amiodarone, verapamil, quinidine, dronedarone...)</label><select id="dint"><option>No</option><option>Yes</option></select></div>
+<div><label>Route / form</label><select id="droute"><option>Tablet</option><option>IV</option><option>Elixir</option><option>Capsule</option></select></div>
+<div><label>Model</label><select id="dmodel"><option value="w">Winter/Koup-Jusko: 0.8·wt + CrCl (HF: 0.33·wt + 0.9·CrCl)</option><option value="j">Jusko: 1.303·CrCl + 40 (HF: +20)</option></select></div>
+<div><label>Target level (ng/mL)</label><input id="dtgt" type="number" step="any" value="0.7"></div>
+<div><label>Interval (h)</label><input id="dtau" type="number" step="any" value="24"></div>
+<div><label>Include loading dose?</label><select id="dload"><option>No</option><option>Yes</option></select></div>
+<div><label>Current dose (mcg), optional</label><input id="ddose" type="number" step="any"></div>
+<div><label>Days on current dose, optional</label><input id="ddays" type="number" step="any"></div>
+<div><label>Measured level (ng/mL), optional</label><input id="dlvl" type="number" step="any"></div>
+<div><label>Level drawn h after dose</label><input id="dt" type="number" step="any"></div></div>
+<div class="sm">Dosing weight = IBW (actual weight if lower). Vd = 3.8·wt + 3.1·CrCl. F: IV 1.0, tablet 0.7, elixir 0.8, capsule 0.9. Levels must be drawn at least 6 h (ideally 8-24 h, pre-dose) after a dose and at steady state. Low K or Mg, hypercalcemia, hypothyroidism and hypoxia increase toxicity risk. Targets: HF about 0.5-0.9, AF about 0.8-1.2 ng/mL; confirm with local protocol.</div></div><div id="dout"></div></div>
+<div id="theo" class="hide"><div class="card"><h2>Theophylline / Aminophylline (adult) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="tage" type="number" step="any"></div>
+<div><label>Sex</label><select id="tsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="tht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="twt" type="number" step="any"></div>
+<div><label>Smoker?</label><select id="tsmk"><option>No</option><option>Yes</option></select></div>
+<div><label>Heart failure?</label><select id="tchf"><option>No</option><option>Yes</option></select></div>
+<div><label>Cirrhosis / liver failure?</label><select id="tliv"><option>No</option><option>Yes</option></select></div>
+<div><label>Interacting drug</label><select id="tdrug"><option value="none">None</option><option value="low">Lowers clearance (cimetidine, ciprofloxacin, macrolides...)</option><option value="high">Raises clearance (phenytoin, carbamazepine, rifampin...)</option></select></div>
+<div><label>Form / route</label><select id="tform"><option>Aminophylline IV</option><option>Theophylline IV</option><option>Theophylline oral</option></select></div>
+<div><label>Target level (mg/L)</label><input id="ttgt" type="number" step="any" value="10"></div>
+<div><label>Interval (h), oral only</label><input id="ttau" type="number" step="any" value="12"></div>
+<div><label>Already on theophylline (last 24 h)?</label><select id="ton"><option>No</option><option>Yes</option></select></div>
+<div><label>Current level (mg/L), if on</label><input id="tcur" type="number" step="any"></div>
+<div><label>Current dose (mg/h IV, or mg per interval oral), optional</label><input id="tdose" type="number" step="any"></div>
+<div><label>Measured level (mg/L), optional</label><input id="tlvl" type="number" step="any"></div>
+<div><label>Level at steady state?</label><select id="tss"><option>Yes</option><option>No</option></select></div></div>
+<div class="sm">Dosing weight = IBW (actual if lower). Vd = 0.5 L/kg; CL = 0.04 L/kg/h × factors (smoker ×1.6, heart failure ×0.5, cirrhosis ×0.5, clearance-lowering drug ×0.6, enzyme inducer ×1.6). Aminophylline = 0.8 theophylline. Target 5-15 mg/L (10-15 for most benefit); above 20 toxicity rises and kinetics become non-linear. Dose from IBW; clearance varies widely between similar patients, so confirm with a level.</div></div><div id="tout"></div></div>
+<div id="phen" class="hide"><div class="card"><h2>Phenytoin (adult, oral) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="page" type="number" step="any"></div>
+<div><label>Sex</label><select id="psex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="pht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="pwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="pscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="punit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="pdial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Hepatic disease / cirrhosis?</label><select id="phf"><option>No</option><option>Yes</option></select></div>
+<div><label>Albumin (g/L), optional</label><input id="palb" type="number" step="any"></div>
+<div><label>Form / route</label><select id="pform"><option>Capsule</option><option>Chewable tablet</option><option>Suspension</option><option>IV</option></select></div>
+<div><label>Target total level (mg/L)</label><input id="ptgt" type="number" step="any" value="15"></div>
+<div><label>Current dose (mg/day), optional</label><input id="pld" type="number" step="any"></div>
+<div><label>Days on current dose, optional</label><input id="pdd" type="number" step="any"></div>
+<div><label>Measured total level (mg/L), optional</label><input id="plvl" type="number" step="any"></div>
+<div><label>Level at steady state?</label><select id="plss"><option>Yes</option><option>No</option></select></div>
+<div><label>Second level (mg/L), optional</label><input id="plvl2" type="number" step="any"></div>
+<div><label>Second level dose (mg/day), optional</label><input id="pd2" type="number" step="any"></div>
+<div><label>Include IV loading dose?</label><select id="pload"><option>No</option><option>Yes</option></select></div>
+<div><label>Level before loading (mg/L), optional</label><input id="pcur" type="number" step="any"></div></div>
+<div class="sm">Nonlinear (Michaelis-Menten) kinetics: at steady state F·D = Vmax·C/(Km + C). Population Vmax = 7 mg/kg/day (x 0.75 if hepatic disease), Km = 4 mg/L; dosing weight = IBW if above 120% IBW; Vd = 0.7 L/kg. F: capsule 0.95, chewable 1.0, suspension 0.9, IV 1.0. Therapeutic total 10-20 mg/L (free 1-2 mg/L); levels are pre-dose, after 7-14 days on a stable dose. Correct the level for low albumin (Sheiner-Tozer) before adjusting. Phenytoin is not removed significantly by dialysis; use free levels in renal failure. Phenytoin sodium contains about 92% phenytoin acid.</div></div><div id="pout"></div></div>
+<div id="tacro" class="hide"><div class="card"><h2>Tacrolimus (adult) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="kage" type="number" step="any"></div>
+<div><label>Sex</label><select id="ksex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="kht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="kwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="kscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="kunit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="kdial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Transplant / indication</label><select id="ktr"><option>Kidney transplant</option><option>Liver transplant</option><option>Heart transplant</option><option>Other (autoimmune, myasthenia...)</option></select></div>
+<div><label>Hepatic disease?</label><select id="khep"><option>No</option><option>Yes</option></select></div>
+<div><label>CYP3A interaction</label><select id="kint"><option value="none">None</option><option value="up">Raises level (azoles, macrolides...)</option><option value="dn">Lowers level (rifampin, phenytoin, St John's wort...)</option></select></div>
+<div><label>Target trough (ng/mL)</label><input id="ktgt" type="number" step="any" value="8"></div>
+<div><label>Current dose (mg/day), optional</label><input id="kdose" type="number" step="any"></div>
+<div><label>Days on dose, optional</label><input id="kdays" type="number" step="any"></div>
+<div><label>Measured trough (ng/mL), optional</label><input id="klvl" type="number" step="any"></div></div>
+<div class="sm">First-order kinetics: at steady state the trough is proportional to the dose, so the dose is adjusted linearly (new = old x target/measured, capped at +/-50% per step). Initial dose 0.05-0.1 mg/kg/day PO divided q12h (lower with hepatic disease or an azole/macrolide). Trough: pre-dose, at steady state (about 3-5 days; longer with hepatic disease). Tacrolimus is metabolized hepatically - no renal dose adjustment, but it is nephrotoxic: monitor creatinine, K and Mg. Watch QT and glucose.</div></div><div id="kout"></div></div>
+<div id="cyclo" class="hide"><div class="card"><h2>Cyclosporine (adult) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="cage" type="number" step="any"></div>
+<div><label>Sex</label><select id="csex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Height (cm)</label><input id="cht" type="number" step="any"></div>
+<div><label>Weight (kg)</label><input id="cwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="cscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="cunit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="cdial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Form</label><select id="cform"><option>Modified (Neoral)</option><option>Original (Sandimmune)</option></select></div>
+<div><label>Hepatic disease?</label><select id="chep"><option>No</option><option>Yes</option></select></div>
+<div><label>CYP3A interaction</label><select id="cint"><option value="none">None</option><option value="up">Raises level (azoles, macrolides, diltiazem...)</option><option value="dn">Lowers level (rifampin, phenytoin, St John's wort...)</option></select></div>
+<div><label>Target trough (ng/mL)</label><input id="ctgt" type="number" step="any" value="150"></div>
+<div><label>Current dose (mg/day), optional</label><input id="cdose" type="number" step="any"></div>
+<div><label>Days on dose, optional</label><input id="cdays" type="number" step="any"></div>
+<div><label>Measured trough (ng/mL), optional</label><input id="clvl" type="number" step="any"></div></div>
+<div class="sm">First-order kinetics: linear dose adjustment (new = old x target/measured, capped at +/-50% per step). Initial 3-5 mg/kg/day PO divided q12h (lower with hepatic disease or an interacting drug). Trough pre-dose at steady state (2-4 days). Modified and original forms are NOT interchangeable. Nephrotoxic: monitor creatinine, BP, potassium, magnesium, lipids; gingival hyperplasia with long use.</div></div><div id="cout"></div></div>
+<div id="linez" class="hide"><div class="card"><h2>Linezolid (adult) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="zage" type="number" step="any"></div>
+<div><label>Sex</label><select id="zsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Weight (kg)</label><input id="zwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="zscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="zunit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="zdial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Days on therapy, optional</label><input id="zdays" type="number" step="any"></div>
+<div><label>Measured trough (mg/L), optional</label><input id="zlvl" type="number" step="any"></div>
+<div><label>Serotonergic drug (SSRI, SNRI, TCA, MAOI...)?</label><select id="zser"><option>No</option><option>Yes</option></select></div></div>
+<div class="sm">Standard dosing: 600 mg q12h IV or PO (oral bioavailability about 100%). No renal adjustment for CrCl 30 or above; with CrCl below 30 many protocols use 600 mg q24h - evidence is mixed, follow the local protocol. Linezolid is removed by dialysis: dose after the session. TDM target trough 2-8 mg/L. Watch thrombocytopenia (and anemia), lactic acidosis, peripheral/optic neuropathy beyond 28 days, and serotonin syndrome with serotonergic drugs.</div></div><div id="zout"></div></div>
+<div id="fluc" class="hide"><div class="card"><h2>Fluconazole (adult) - patient and regimen</h2><div class="grid">
+<div><label>Age (years)</label><input id="fage" type="number" step="any"></div>
+<div><label>Sex</label><select id="fsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+<div><label>Weight (kg)</label><input id="fwt" type="number" step="any"></div>
+<div><label>Serum creatinine</label><input id="fscr" type="number" step="any"></div>
+<div><label>SCr unit</label><select id="funit"><option value="umol">umol/L</option><option value="mg">mg/dL</option></select></div>
+<div><label>Dialysis / CRRT</label><select id="fdial"><option>No</option><option>Hemodialysis</option><option>Peritoneal dialysis</option><option>CRRT</option></select></div>
+<div><label>Indication</label><select id="find"><option>Invasive candidiasis</option><option>Oesophageal candidiasis</option><option>Cryptococcal induction</option><option>Other / per protocol</option></select></div></div>
+<div class="sm">Weight-based dosing (actual weight): invasive/cryptococcal: load 12 mg/kg (max 800) then 6 mg/kg (max 400) q24h; oesophageal: 200 mg then 100 mg q24h. If CrCl is 50 or below (and not on dialysis) halve the maintenance dose (loading unchanged). Fluconazole is removed by hemodialysis: give the dose after the session; PD needs level/protocol-guided dosing. Watch QT, liver enzymes and CYP2C9/3A4 interactions (warfarin, sulfonylureas...).</div></div><div id="fout"></div></div>
+<div class="card"><h2>Plans (mock-up, no payment)</h2><div class="sm"><b>Free</b>: Vancomycin, Gentamicin, Amikacin, Tobramycin, Digoxin, Theophylline, Phenytoin, Tacrolimus, Cyclosporine, Linezolid, Fluconazole. <b>Pro</b>: more drugs, saved cases, PDF notes, institutional protocols. Subscriptions need accounts, a backend and store billing; they are not built here.</div></div>
+<script>
+const $=i=>document.getElementById(i),v=i=>$(i).value===''?null:+$(i).value,f=(x,d=1)=>Number(x).toFixed(d),r250=x=>Math.max(250,Math.round(x/250)*250);
+let M=1;const MAXS=2000,MAXD=4500;
+const LB={age:'Age',sex:'Sex',ht:'Height',wt:'Weight',scr:'Serum creatinine',tau:'Interval',ti:'Infusion time',mic:'MIC',dose:'Current dose',tauc:'Target AUC24',ttr:'Target trough',l1:'Level 1',t1:'Level 1 time',l2:'Level 2',t2:'Level 2 time'};
+const NEED={1:['age','sex','ht','wt','scr','tau','ti','mic','tauc','ttr'],2:['age','sex','ht','wt','scr','tau','ti','mic','dose'],3:['age','sex','ht','wt','scr','tau','ti','mic','dose','ttr','l1','t1']};
+const LIM={age:[18,120,18,89],ht:[100,250,140,200],wt:[20,400,40,150],dose:[100,6000,250,2500],tau:[4,72,6,48],ti:[.25,8,1,4],mic:[.06,64,.5,2],tauc:[100,1500,400,600],ttr:[1,40,10,20],l1:[0,200,5,60],l2:[0,200,5,60],t1:[0,72,0,72],t2:[0,72,0,72]};
+function vis(){document.querySelectorAll('[data-m]').forEach(e=>{if(e.tagName!='BUTTON')e.classList.toggle('hide',!e.dataset.m.split(' ').includes(''+M))})}
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>{M=+b.dataset.m;document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x==b));vis();run()});
+document.querySelectorAll('input,select').forEach(e=>e.oninput=run);
+function ss(D,CL,V,tau,ti){const k=CL/V,pk=(D/ti/CL)*(1-Math.exp(-k*ti))/(1-Math.exp(-k*tau));return{k,pk,tr:pk*Math.exp(-k*(tau-ti)),auc:D*24/tau/CL}}
+function conc(s,D,CL,V,tau,ti){const o=ss(D,CL,V,tau,ti),k=o.k;s=((s%tau)+tau)%tau;return s<=ti?(D/ti/CL)*(1-Math.exp(-k*s))+o.tr*Math.exp(-k*s):o.pk*Math.exp(-k*(s-ti))}
+function check(){const m=[],e=[],w=[];document.querySelectorAll('input').forEach(i=>i.classList.remove('w','e'));
+ NEED[M].forEach(i=>{if(v(i)===null)m.push(LB[i])});
+ const bad=(id,t,lvl)=>{$(id).classList.add(lvl=='e'?'e':'w');(lvl=='e'?e:w).push(t)};
+ for(const id in LIM){const x=v(id);if(x===null||$(id).offsetParent===null)continue;const[a,b,c,d]=LIM[id];
+  if(x<a||x>b)bad(id,LB[id]+' '+x+' is outside the hard limit ('+a+'-'+b+')','e');else if(x<c||x>d)bad(id,LB[id]+' '+x+' is unusual (usual '+c+'-'+d+')','w')}
+ const s=v('scr');if(s!==null){const u=$('unit').value=='umol'?s:s*88.4;if(u<20||u>2000)bad('scr','Serum creatinine is outside the hard limit (20-2000 umol/L)','e');else if(u<45||u>350)bad('scr','Serum creatinine is unusual (usual 45-350 umol/L)','w')}
+ const tau=v('tau'),ti=v('ti'),D=v('dose');
+ if(tau&&ti&&ti>tau)bad('ti','Infusion time exceeds the interval','e');
+ if(D&&ti&&D/ti>1000)bad('ti','Infusion rate above 1000 mg/h','w');
+ [['t1'],['t2']].forEach(([t])=>{const x=v(t);if(x!==null&&tau&&ti&&x>tau-ti)bad(t,LB[t]+' is after the end of the interval','e')});
+ if(v('l2')!==null&&v('t2')===null)m.push('Level 2 time');
+ if(v('l1')!==null&&v('l2')!==null&&v('t1')!==null&&v('t2')!==null){const a=[[v('t1'),v('l1')],[v('t2'),v('l2')]].sort((p,q)=>p[0]-q[0]);if(a[0][0]==a[1][0])bad('t2','Level times must differ','e');else if(a[1][1]>=a[0][1])bad('l2','The later level must be lower than the earlier one','e')}
+ return{m,e,w}}
+function run(){const c=check(),o=$('out');let h='<div class="card"><h2>4. Result</h2>';
+ c.e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');c.w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(c.m.length||c.e.length){if(c.m.length)h+='<div class="msg m">Missing required: '+c.m.join(', ')+'</div>';o.innerHTML=h+'<div class="sm">Results are hidden until all required inputs are entered and valid.</div></div>';return}
+ if($('dial').value!='No'){const dy=$('dial').value;const p=dy=='Hemodialysis'?'Protocol shape (HD): load 25 mg/kg (max 3000 mg), then 500-1000 mg IV after each session (give after the session, not before); target pre-HD trough 10-20 mg/L or AUC per protocol.':dy=='CRRT'?'Protocol shape (CRRT): 15-25 mg/kg IV q12-24h depending on effluent dose (25-35 mL/kg/h); check a level within 24 h and daily.':'Protocol shape (PD): 25 mg/kg IV load, then dose per the PD protocol (intraperitoneal or IV) guided by levels.';
+  o.innerHTML=h+'<div class="msg e"><b>NOT CALCULATED by the population model</b> - dialysis/CRRT selected. Cockcroft-Gault and the population model do not apply.</div><div class="msg w">'+p+'</div><div class="sm">These are general protocol shapes - confirm with the local renal replacement protocol and a pharmacist.</div><div class="rev y">Pharmacist/clinician review required</div></div>';return}
+ const age=v('age'),fem=$('sex').value=='Female',ht=v('ht'),wt=v('wt'),tau=v('tau'),ti=v('ti'),mic=v('mic'),D=v('dose'),tauc=v('tauc'),ttr=v('ttr');
+ const sc=($('unit').value=='umol'?v('scr')/88.4:v('scr')),bmi=wt/Math.pow(ht/100,2),ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),wu=bmi>=30?ibw+.4*(wt-ibw):wt;
+ const crcl=Math.max(0,(140-age)*wu/(72*sc))*(fem?.85:1),CLp=.65*crcl*.06,Vp=.7*wt;let CL=CLp,V=Vp,src='Population estimate (no levels)';
+ if(M==3){const l1=v('l1'),t1=v('t1'),l2=v('l2'),t2=v('t2');
+  if(l2!==null){let a=[[t1,l1],[t2,l2]].sort((p,q)=>p[0]-q[0]);const k=Math.log(a[0][1]/a[1][1])/(a[1][0]-a[0][0]),pk=a[0][1]*Math.exp(k*a[0][0]),mn=pk*Math.exp(-k*(tau-ti));
+   V=(D/ti)*(1-Math.exp(-k*ti))/(k*(pk-mn*Math.exp(-k*ti)));CL=k*V;src='Individual: two levels (Sawchuk-Zaske)'}
+  else{let lo=.05,hi=40;for(let i=0;i<80;i++){const mid=(lo+hi)/2,o=ss(D,mid,Vp,tau,ti),p=o.pk*Math.exp(-o.k*t1);if(p>l1)lo=mid;else hi=mid}CL=(lo+hi)/2;src='Individual: one level, clearance fitted (Vd = population)'}}
+ const k=CL/V,cur=D?ss(D,CL,V,tau,ti):null,hiR=['trend','icu','sep','neph'].some(i=>['Worsening','Yes'].includes($(i).value));
+ let dA=tauc?r250(tauc*CL*tau/24):null,dT=ttr?r250(ttr/ss(1,CL,V,tau,ti).tr):null;
+ const capb=d=>d>MAXS||d*24/tau>MAXD,rec=dA??dT,series=[];let flag=hiR;
+ h+='<div class="kv"><span>Creatinine clearance</span><b>'+f(crcl)+' mL/min</b><span>Clearance</span><b>'+f(CL,2)+' L/h</b><span>Volume of distribution</span><b>'+f(V)+' L</b><span>Elimination rate / half-life</span><b>'+f(k,3)+' /h · '+f(Math.LN2/k)+' h</b></div><div class="sm">'+src+'</div>';
+ if($('vld').value=='Yes'){const LDr=r250(Math.min(25*wt,3000)),tinf=Math.max(1,LDr/(15*wt),LDr/750);
+  h+='<h2 style="margin-top:12px">Loading dose</h2><div class="big">'+LDr+' mg IV once</div><div class="kv"><span>Per kg (actual weight)</span><b>'+f(LDr/wt)+' mg/kg</b><span>Infuse over at least</span><b>'+f(tinf,1)+' h</b></div><div class="sm">25 mg/kg of actual weight (max 3000 mg), infusion rate not above 15 mg/kg/h (or 750 mg/h). Start the maintenance dose after the first interval.</div>'}
+ if(cur){h+='<h2 style="margin-top:12px">Current regimen: '+D+' mg q'+tau+'h (infusion '+ti+' h)</h2><div class="kv"><span>Peak (end of infusion)</span><b>'+f(cur.pk)+' mg/L</b><span>Trough</span><b>'+f(cur.tr)+' mg/L</b><span>AUC24</span><b>'+f(cur.auc,0)+' mg·h/L</b><span>AUC24/MIC</span><b>'+f(cur.auc/mic,0)+'</b></div>';
+  if(cur.tr>20||cur.auc/mic>600){flag=true;h+='<div class="msg w">Predicted exposure above common targets (trough &gt; 20 or AUC24/MIC &gt; 600).</div>'}else if(cur.auc/mic<400)h+='<div class="msg w">AUC24/MIC below 400: possible under-exposure.</div>';series.push([D,'Current','var(--b)'])}
+ if(M!=2){h+='<h2 style="margin-top:12px">Recommended regimen</h2>';
+  [['Target AUC24 '+tauc,dA],['Target trough '+ttr,dT]].forEach(([n,d],i)=>{if(d==null||(i==1&&d==dA))return;if(capb(d)){flag=true;h+='<div class="msg e"><b>'+n+': NOT SUGGESTED</b> - calculated dose exceeds the safety cap (max single '+MAXS+' mg / max daily '+MAXD+' mg). Pharmacist review required.</div>'}
+   else{const o=ss(d,CL,V,tau,ti);h+='<div class="big">'+d+' mg every '+tau+' h (infuse over '+ti+' h) - '+n+'</div><div class="kv"><span>Predicted peak / trough</span><b>'+f(o.pk)+' / '+f(o.tr)+' mg/L</b><span>Predicted AUC24 · AUC24/MIC</span><b>'+f(o.auc,0)+' · '+f(o.auc/mic,0)+'</b></div>';if(n.startsWith('Target AUC')||!series.some(s=>s[1]=='Recommended'))series.push([d,'Recommended','var(--a)']);if(o.auc<400||o.auc>600){flag=true;h+='<div class="msg w">Predicted AUC24 '+f(o.auc,0)+' is outside 400-600 after rounding to 250 mg: review the regimen.</div>'}}});
+  const fl=Math.ceil(4*Math.LN2/k/tau)+1;h+='<div class="sm">Suggested first level: before dose '+Math.max(4,fl)+' (about 4 half-lives).</div>'}
+ if(M==3&&D&&v('l2')===null){const t=ss(D,CLp,Vp,tau,ti),pr=t.pk*Math.exp(-t.k*v('t1')),df=(v('l1')-pr)/pr*100;h+='<div class="msg '+(Math.abs(df)>40?'w':'m')+'">Measured level vs population prediction: '+f(df,0)+'% ('+(Math.abs(df)<=20?'good agreement':Math.abs(df)<=40?'moderate disagreement':'poor agreement - review timing and renal function')+').</div>';if(Math.abs(df)>40)flag=true}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div>';
+ if(series.length){const W=640,H=210,T=3*tau,pts=s=>{let a=[];for(let t=0;t<=T;t+=T/150)a.push([t,conc(t,s[0],CL,V,tau,ti)]);return a},all=series.map(pts),ym=Math.max(...all.flat().map(p=>p[1]))*1.1;
+  h+='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Steady-state concentration-time profile"><line x1="40" y1="10" x2="40" y2="180" stroke="var(--bd)"/><line x1="40" y1="180" x2="630" y2="180" stroke="var(--bd)"/>';
+  all.forEach((a,i)=>h+='<polyline fill="none" stroke="'+series[i][2]+'" stroke-width="2" points="'+a.map(p=>(40+p[0]/T*590).toFixed(1)+','+(180-p[1]/ym*170).toFixed(1)).join(' ')+'"/>');
+  h+='<text x="4" y="16" font-size="11" fill="var(--mut)">'+f(ym,0)+'</text><text x="4" y="180" font-size="11" fill="var(--mut)">0</text><text x="40" y="198" font-size="11" fill="var(--mut)">0 h</text><text x="600" y="198" font-size="11" fill="var(--mut)">'+T+' h</text>';
+  series.forEach((s,i)=>h+='<text x="'+(60+i*130)+'" y="208" font-size="12" fill="'+s[2]+'">'+s[1]+' '+s[0]+' mg</text>');h+='</svg>'}
+ const note='Vancomycin PK note\nPatient: '+age+' y '+$('sex').value+', '+f(wt,0)+' kg, '+f(ht,0)+' cm, SCr '+v('scr')+' '+$('unit').selectedOptions[0].text+'; CrCl (C-G) '+f(crcl)+' mL/min.\n'+src+': CL '+f(CL,2)+' L/h, Vd '+f(V)+' L, t1/2 '+f(Math.LN2/k)+' h.\n'+(cur?'Current '+D+' mg q'+tau+'h: peak '+f(cur.pk)+', trough '+f(cur.tr)+', AUC24 '+f(cur.auc,0)+', AUC/MIC '+f(cur.auc/mic,0)+'.\n':'')+(M!=2&&rec&&!capb(rec)?'Recommended: '+rec+' mg q'+tau+'h over '+ti+' h (target AUC24 '+tauc+').\n':'')+(flag?'Pharmacist review required.':'Routine monitoring.')+'\nDecision support only.';
+ h+='<h2 style="margin-top:12px">Progress note</h2><textarea id="note" readonly>'+note+'</textarea><button class="c" id="cp">Copy note</button></div>';o.innerHTML=h;
+ $('cp').onclick=()=>{const t=$('note');t.select();try{navigator.clipboard.writeText(t.value)}catch(x){try{document.execCommand('copy')}catch(y){}}$('cp').textContent='Copied'}}
+vis();run();
+document.querySelectorAll('#drugs button[data-d]').forEach(b=>b.onclick=()=>{document.querySelectorAll('#drugs button').forEach(x=>x.classList.toggle('on',x==b));const d=b.dataset.d,SEC={vanc:'vanc',gent:'gent',amik:'gent',tobra:'gent',dig:'dig',theo:'theo',phen:'phen',tacro:'tacro',cyclo:'cyclo',linez:'linez',fluc:'fluc'};document.querySelectorAll('#vanc,#gent,#dig,#theo,#phen,#tacro,#cyclo,#linez,#fluc').forEach(x=>x.classList.add('hide'));$(SEC[d]).classList.remove('hide');if(SEC[d]=='gent')gset(d);$('badge').textContent=BD[d]});
+const BD={vanc:'Vancomycin: math verified (250/250 checks vs independent model) · pending clinical review',gent:'Gentamicin: math verified (24/24 checks vs independent simulation) · pending clinical review',amik:'Amikacin: math verified (28/28 checks vs independent simulation) · pending clinical review',theo:'Theophylline: math verified (51/51 checks vs independent simulation) · pending clinical review',dig:'Digoxin: math verified (48/48 checks vs independent simulation) · pending clinical review',tobra:'Tobramycin: math verified (28/28 checks vs independent simulation) · pending clinical review',phen:'Phenytoin: math verified (58/58 checks vs independent simulation) · pending clinical review',tacro:'Tacrolimus: math verified (29/29 checks vs independent calculation) · pending clinical review',cyclo:'Cyclosporine: math verified (29/29 checks vs independent calculation) · pending clinical review',linez:'Linezolid: dosing verified (2/2 checks) · pending clinical review',fluc:'Fluconazole: dosing verified (6/6 checks) · pending clinical review'};const NM={gent:'Gentamicin',amik:'Amikacin',tobra:'Tobramycin'};
+function gset(d){const A=d=='amik';$('gdrug').value=d;$('gp').value=A?25:8;$('gt').value=A?5:1;$('gkm').value=A?'mz':'sz';$('gtitle').textContent=NM[d]+' (traditional dosing) - patient and regimen';grun()}
+function grun(){const g=i=>v(i),o=$('gout'),m=[],e=[],w=[];['gage','gsex','ght','gwt','gscr','gp','gt'].forEach(i=>{if(g(i)===null)m.push(i)});
+ document.querySelectorAll('#gent input').forEach(i=>i.classList.remove('w','e'));
+ const A0=$('gdrug').value=='amik',L2={gage:[18,120,18,89],ght:[100,250,140,200],gwt:[20,400,40,150],gd:[20,2000,60,1500],gtau:[6,72,8,48],gp:A0?[5,100,15,40]:[1,60,4,12],gt:A0?[0,40,1,10]:[0,10,0.2,2]};
+ for(const id in L2){const x=g(id);if(x===null)continue;const[a,b,c,d]=L2[id];if(x<a||x>b){$(id).classList.add('e');e.push(id+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(id+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ let h='<div class="card"><h2>'+NM[$('gdrug').value]+' result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, SCr, targets) with valid values.</div></div>';return}
+ if($('gdial').value!='No'){const dy=$('gdial').value,A0=$('gdrug').value=='amik';const p=dy=='Hemodialysis'?'Protocol shape (HD): '+(A0?'4-5 mg/kg amikacin':'1-2 mg/kg gentamicin/tobramycin')+' after each session; trough pre-session, peak 30-60 min after the post-session dose.':dy=='CRRT'?'Protocol shape (CRRT): '+(A0?'dose per effluent rate, level-guided':'2-3 mg/kg q24-48h depending on effluent')+' - check levels.':'Protocol shape (PD): dose per the PD protocol with levels.';
+  o.innerHTML=h+'<div class="msg e"><b>NOT CALCULATED by the population model</b> - dialysis/CRRT selected.</div><div class="msg w">'+p+'</div><div class="sm">These are general protocol shapes - confirm with the local renal replacement protocol and a pharmacist.</div><div class="rev y">Pharmacist/clinician review required</div></div>';return}
+ const fem=$('gsex').value=='Female',ht=g('ght'),wt=g('gwt'),sc=$('gunit').value=='umol'?g('gscr')/88.4:g('gscr');
+ const ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),dw=wt<ibw?wt:(wt>1.2*ibw?ibw+.4*(wt-ibw):ibw),crcl=Math.max(0,(140-g('gage'))*dw/(72*sc))*(fem?.85:1);
+ const A=$('gdrug').value=='amik',ke=({sz:.00293*crcl+.014,mz:.0024*crcl+.01,tb:.0031*crcl+.01})[$('gkm').value],V=.25*dw,CL=ke*V,ti=.5,pk=(D,t)=>(D/ti/CL)*(1-Math.exp(-ke*ti))/(1-Math.exp(-ke*t)),tr=(D,t)=>pk(D,t)*Math.exp(-ke*(t-ti));
+ let flag=['Worsening'].includes($('gtrend').value);
+ h+='<div class="kv"><span>CrCl (dosing weight '+f(dw)+' kg)</span><b>'+f(crcl)+' mL/min</b><span>ke / half-life</span><b>'+f(ke,3)+' /h · '+f(Math.LN2/ke)+' h</b><span>Vd</span><b>'+f(V)+' L</b></div>';
+ const D=g('gd'),t=g('gtau');if(D&&t){if(t<=ti){h+='<div class="msg e">INVALID: interval must exceed infusion time</div>'}else{const p=pk(D,t),q=tr(D,t);h+='<h2 style="margin-top:12px">Current: '+D+' mg q'+t+'h ('+f(D/wt,1)+' mg/kg)</h2><div class="kv"><span>Predicted peak / trough</span><b>'+f(p)+' / '+f(q)+' mg/L</b></div>';if(p>(A?60:15)){flag=true;h+='<div class="msg w">Predicted peak above '+(A?60:15)+' mg/L: review dose.</div>'}if(q>(A?10:2)){flag=true;h+='<div class="msg w">Predicted trough above '+(A?10:2)+' mg/L: toxicity risk.</div>'}}}
+ const P=g('gp'),T=g('gt');let rt=null;for(const tt of [8,12,18,24,36,48,72]){if(P*Math.exp(-ke*(tt-ti))<=Math.max(T,0.01)){rt=tt;break}}
+ h+='<h2 style="margin-top:12px">Recommended regimen</h2>';
+ if(!rt){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - the trough target cannot be met within 72 h. Pharmacist review required.</div>'}
+ else{const d=Math.round(P*ti*CL*(1-Math.exp(-ke*rt))/(1-Math.exp(-ke*ti))/10)*10;
+  if(d/dw>(A?15:7)||d<20){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - calculated dose ('+d+' mg, '+f(d/dw,1)+' mg/kg) is outside the safety cap (max '+(A?15:7)+' mg/kg). Pharmacist review required.</div>'}
+  else h+='<div class="big">'+d+' mg every '+rt+' h (infuse over 30 min)</div><div class="kv"><span>Dose per kg (dosing weight)</span><b>'+f(d/dw,1)+' mg/kg</b><span>Predicted peak / trough</span><b>'+f(pk(d,rt))+' / '+f(tr(d,rt))+' mg/L</b></div><div class="sm">Suggested levels: after the 3rd dose (peak 30 min after the end of infusion, trough before the next dose).</div>'}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#gent input,#gent select').forEach(e=>e.oninput=grun);grun();$('badge').textContent=BD.vanc;
+const LD={dage:[18,120,18,89],dht:[100,250,140,200],dwt:[20,400,40,150],dtgt:[.2,2.5,.5,1.2],dtau:[12,72,12,48],ddose:[12.5,1000,62.5,500],dlvl:[0,10,.5,2],dt:[0,72,8,48],ddays:[0,365,0,365]};
+const DL={dage:'Age',dsex:'Sex',dht:'Height',dwt:'Weight',dscr:'Serum creatinine',dtgt:'Target level',dtau:'Interval',ddose:'Current dose',dlvl:'Measured level',dt:'Hours after dose',ddays:'Days on dose'};
+function drun(){const g=i=>v(i),o=$('dout'),m=[],e=[],w=[];['dage','dsex','dht','dwt','dscr','dtgt','dtau'].forEach(i=>{if(g(i)===null)m.push(DL[i])});
+ document.querySelectorAll('#dig input').forEach(i=>i.classList.remove('w','e'));
+ for(const id in LD){const x=g(id);if(x===null)continue;const[a,b,c,d]=LD[id];if(x<a||x>b){$(id).classList.add('e');e.push(DL[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(DL[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ const s0=g('dscr');if(s0!==null){const u=$('dunit').value=='umol'?s0:s0*88.4;if(u<20||u>2000)e.push('Serum creatinine outside hard limit (20-2000 umol/L)');else if(u<45||u>350)w.push('Serum creatinine unusual (usual 45-350 umol/L)')}
+ let h='<div class="card"><h2>Digoxin result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, SCr, target, interval) with valid values.</div></div>';return}
+ if($('ddial').value!='No'){const dy=$('ddial').value;const p=dy=='Hemodialysis'?'HD removes little digoxin: typical practice is 62.5-125 mcg after each session guided by post-session levels (drawn at least 6 h after the session). Hypokalemia after HD raises toxicity risk.':dy=='CRRT'?'CRRT removes a variable amount - specialist dosing with levels.':'PD clears slowly - reduced dose, level-guided.';
+  o.innerHTML=h+'<div class="msg e"><b>NOT CALCULATED by the population model</b> - dialysis/CRRT selected. Digoxin is not removed well by dialysis and needs a specialist protocol with levels.</div><div class="msg w">'+p+'</div><div class="rev y">Pharmacist/clinician review required</div></div>';return}
+ const fem=$('dsex').value=='Female',ht=g('dht'),wt=g('dwt'),sc=$('dunit').value=='umol'?g('dscr')/88.4:g('dscr'),HF=$('dhf').value=='Yes';
+ const ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),dw=wt<ibw?wt:ibw,crcl=Math.max(0,(140-g('dage'))*dw/(72*sc)*(fem?.85:1));
+ const clm=$('dmodel').value=='w'?(HF?.33*dw+.9*crcl:.8*dw+crcl):1.303*crcl+(HF?20:40),CL=clm*.06,Vd=3.8*dw+3.1*crcl,ke=CL/Vd,rt=$('droute').value,F={IV:1,Tablet:.7,Elixir:.8,Capsule:.9}[rt],tau=g('dtau'),T=g('dtgt'),st=rt=='IV'?12.5:62.5;
+ const avg=D=>F*D/(CL*tau),lv=(D,t)=>F*D/Vd*Math.exp(-ke*t)/(1-Math.exp(-ke*tau)),rd=x=>Math.max(st,Math.floor(x/st+.5)*st);
+ let flag=$('dtrend').value=='Worsening'||$('dint').value=='Yes';
+ if($('dint').value=='Yes')h+='<div class="msg w">Interacting drug: digoxin exposure is usually raised; many references suggest reducing the dose by about 30-50%. Review with the pharmacist.</div>';
+ h+='<div class="kv"><span>CrCl (dosing weight '+f(dw)+' kg)</span><b>'+f(crcl)+' mL/min</b><span>Clearance / Vd</span><b>'+f(CL,2)+' L/h / '+f(Vd,0)+' L</b><span>Half-life / time to steady state</span><b>'+f(Math.LN2/ke/24,1)+' d / about '+f(5*Math.LN2/ke/24,0)+' d</b></div>';
+ const dm=T*CL*tau/F,dr=rd(dm);h+='<h2 style="margin-top:12px">Recommended maintenance</h2>';
+ if(dr*24/tau>500){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - calculated daily dose exceeds the safety cap (500 mcg/day). Pharmacist review required.</div>'}
+ else{h+='<div class="big">'+dr+' mcg every '+tau+' h ('+rt+')</div><div class="kv"><span>Calculated before rounding</span><b>'+f(dm,1)+' mcg</b><span>Predicted average / trough</span><b>'+f(avg(dr),2)+' / '+f(lv(dr,tau),2)+' ng/mL</b></div>';if(dm<st*.75)h+='<div class="sm">Calculated dose is below the smallest unit: consider an alternate-day schedule.</div>'}
+ if($('dload').value=='Yes'){const L=T*Vd/F,Lr=rd(L);h+='<h2 style="margin-top:12px">Loading dose</h2>';
+  if(Lr>1500||Lr/dw>15){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - loading dose exceeds the safety cap (1500 mcg or 15 mcg/kg). Pharmacist review required.</div>'}
+  else h+='<div class="big">'+Lr+' mcg total, divided</div><div class="sm">Give '+rd(Lr*.5)+' mcg, then '+rd(Lr*.25)+' mcg and '+rd(Lr*.25)+' mcg every '+(rt=='IV'?'2-4':'6-8')+' h, with ECG and K monitoring.</div>'}
+ const D=g('ddose');if(D){h+='<h2 style="margin-top:12px">Current: '+D+' mcg every '+tau+' h</h2><div class="kv"><span>Predicted average / trough</span><b>'+f(avg(D),2)+' / '+f(lv(D,tau),2)+' ng/mL</b></div>';
+  if(avg(D)>(HF?1.2:2)){flag=true;h+='<div class="msg w">Predicted average level above '+(HF?1.2:2)+' ng/mL: toxicity risk.</div>'}
+  const L1=g('dlvl'),t1=g('dt');if(L1!==null){if(t1===null||t1<6){flag=true;h+='<div class="msg e">Level not interpretable: it must be drawn at least 6 h after a dose (enter the hours after dose).</div>'}
+   else{const p=lv(D,t1),df=(L1-p)/p*100;h+='<div class="kv"><span>Measured vs predicted at '+t1+' h</span><b>'+f(L1,2)+' vs '+f(p,2)+' ng/mL ('+f(df,0)+'%)</b></div>';
+    if(g('ddays')!==null&&g('ddays')<7){flag=true;h+='<div class="msg w">Less than 7 days on this dose: probably not at steady state, so the adjustment below is unreliable.</div>'}
+    if(L1>2){flag=true;h+='<div class="msg e">Level above 2 ng/mL: assess for toxicity (ECG, K, Mg) urgently.</div>'}
+    if(L1<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
+    else{const a=rd(D*T/L1);if(a*24/tau>500){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - adjusted dose exceeds the 500 mcg/day cap.</div>'}
+     else h+='<div class="big">Adjusted: '+a+' mcg every '+tau+' h</div><div class="kv"><span>Expected level after adjustment</span><b>'+f(L1*a/D,2)+' ng/mL</b></div>'}}}}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#dig input,#dig select').forEach(e=>e.oninput=drun);drun();
+const LT={tage:[18,120,18,89],tht:[100,250,140,200],twt:[20,400,40,150],ttgt:[1,30,5,15],ttau:[6,48,8,24],tcur:[0,60,0,20],tlvl:[0,60,3,20]};
+const TL={tage:'Age',tsex:'Sex',tht:'Height',twt:'Weight',ttgt:'Target level',ttau:'Interval',tcur:'Current level',tdose:'Current dose',tlvl:'Measured level'};
+function trun(){const g=i=>v(i),o=$('tout'),m=[],e=[],w=[],IV=$('tform').value!='Theophylline oral';
+ ['tage','tsex','tht','twt','ttgt'].forEach(i=>{if(g(i)===null)m.push(TL[i])});if(!IV&&g('ttau')===null)m.push('Interval');
+ document.querySelectorAll('#theo input').forEach(i=>i.classList.remove('w','e'));
+ const L2={...LT,tdose:IV?[1,150,5,60]:[50,1500,100,900]};
+ for(const id in L2){if(id=='ttau'&&IV)continue;const x=g(id);if(x===null)continue;const[a,b,c,d]=L2[id];if(x<a||x>b){$(id).classList.add('e');e.push(TL[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(TL[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ let h='<div class="card"><h2>Theophylline result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, target'+(IV?'':', interval')+') with valid values.</div></div>';return}
+ const fem=$('tsex').value=='Female',ht=g('tht'),wt=g('twt'),age=g('tage'),ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),dw=wt<ibw?wt:ibw,dr=$('tdrug').value;
+ const fc=($('tsmk').value=='Yes'?1.6:1)*($('tchf').value=='Yes'?.5:1)*($('tliv').value=='Yes'?.5:1)*(dr=='low'?.6:dr=='high'?1.6:1),CL=.04*dw*fc,V=.5*dw,ke=CL/V,S=$('tform').value=='Aminophylline IV'?.8:1,T=g('ttgt'),tau=g('ttau');
+ const slow=$('tchf').value=='Yes'||$('tliv').value=='Yes'||age>=70;let flag=dr!='none'||$('tchf').value=='Yes'||$('tliv').value=='Yes';
+ h+='<div class="kv"><span>Dosing weight (IBW)</span><b>'+f(dw)+' kg</b><span>Clearance (factor x'+f(fc,2)+') / Vd</span><b>'+f(CL,2)+' L/h / '+f(V)+' L</b><span>Half-life</span><b>'+f(Math.LN2/ke)+' h</b></div>';
+ const D=g('tdose'),L1=g('tlvl');let rd;
+ h+='<h2 style="margin-top:12px">Recommended '+(IV?'IV regimen':'oral regimen')+'</h2>';
+ if(IV){const on=$('ton').value=='Yes',C0=g('tcur');
+  if(on&&C0===null){flag=true;h+='<div class="msg w">Loading dose not calculated: enter the current level (already on theophylline).</div>'}
+  else{const LD=Math.max(0,(T-(on?C0:0))*V/S),LR=Math.floor(LD/5+.5)*5;
+   if(LR/dw>7){flag=true;h+='<div class="msg e"><b>Loading: NOT SUGGESTED</b> - exceeds the safety cap (7 mg/kg IBW). Pharmacist review required.</div>'}
+   else if(LR<=0)h+='<div class="sm">No loading dose needed.</div>';
+   else h+='<div class="big">Loading: '+LR+' mg over 30 min</div><div class="sm">'+f(LR/dw,1)+' mg/kg IBW. Aminophylline: infuse slowly (not faster than 25 mg/min).</div>'}
+  const k0=T*CL/S,rr=Math.max(1,Math.floor(k0+.5));
+  if(rr/dw>1){flag=true;h+='<div class="msg e"><b>Infusion: NOT SUGGESTED</b> - exceeds the safety cap (1.0 mg/kg IBW/h). Pharmacist review required.</div>'}
+  else{h+='<div class="big">Infusion: '+rr+' mg/h</div><div class="kv"><span>Per kg IBW</span><b>'+f(rr/dw,2)+' mg/kg/h</b><span>Predicted steady-state level</span><b>'+f(S*rr/CL,1)+' mg/L</b></div><div class="sm">Check a level about 24 h after starting; steady state needs about 5 half-lives.</div>';
+   if(slow&&rr>17){flag=true;h+='<div class="msg w">Heart failure, cirrhosis or age 70+: infusion above 17 mg/h needs a level first.</div>'}}
+  if(D)h+='<div class="kv"><span>Current '+D+' mg/h: predicted level</span><b>'+f(S*D/CL,1)+' mg/L</b></div>';
+  rd=x=>Math.max(1,Math.floor(x+.5))}
+ else{const dm=CL*T*tau/S,st=50;rd=x=>Math.max(st,Math.floor(x/st+.5)*st);const d1=rd(dm);
+  if(d1*24/tau>900){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - daily dose exceeds the safety cap (900 mg/day). Pharmacist review required.</div>'}
+  else h+='<div class="big">'+d1+' mg every '+tau+' h (theophylline)</div><div class="kv"><span>Calculated before rounding</span><b>'+f(dm,0)+' mg</b><span>Predicted average level</span><b>'+f(S*d1/(CL*tau),1)+' mg/L</b><span>Approx. peak / trough (instant absorption)</span><b>'+f(S*d1/V/(1-Math.exp(-ke*tau)),1)+' / '+f(S*d1/V/(1-Math.exp(-ke*tau))*Math.exp(-ke*tau),1)+' mg/L</b></div><div class="sm">Sustained-release products give a flatter profile than the peak/trough shown; the average level is the more reliable figure.</div>';
+  if(D)h+='<div class="kv"><span>Current '+D+' mg q'+tau+'h: predicted average</span><b>'+f(S*D/(CL*tau),1)+' mg/L</b></div>'}
+ if(L1!==null&&D){if($('tss').value!='Yes'){flag=true;h+='<div class="msg w">Level not at steady state: the adjustment below is unreliable.</div>'}
+  if(L1>20){flag=true;h+='<div class="msg e">Level above 20 mg/L: assess for toxicity (arrhythmia, seizures). Dose change by clinician; kinetics are non-linear at high levels.</div>'}
+  else if(L1<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
+  else{if(L1>15)flag=true;let q=T/L1,lim=false;if(q>1.25){q=1.25;lim=true}const nd=IV?rd(D*q):Math.max(50,Math.floor(D*q/50+.5)*50);
+   if(IV?nd/dw>1:nd*24/tau>900){flag=true;h+='<div class="msg e"><b>Adjustment: NOT SUGGESTED</b> - exceeds the safety cap.</div>'}
+   else h+='<div class="big">Adjusted: '+nd+(IV?' mg/h':' mg every '+tau+' h')+'</div><div class="kv"><span>Expected level after adjustment</span><b>'+f(L1*nd/D,1)+' mg/L</b></div>'+(lim?'<div class="sm">Increase limited to 25% per step (small increments; re-check the level).</div>':'')}}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#theo input,#theo select').forEach(e=>e.oninput=trun);trun();
 
-1. Choose calculation
-Calculate Dose
-Calculate Trough
-Evaluate & Adjust
-2. Patient data
-Age (years)
-Sex
--MaleFemale
-Height (cm)
-Weight (kg)
-Serum creatinine
-SCr unit
-umol/Lmg/dL
-Renal trend
-StableImprovingWorseningUnknown
-Dialysis / CRRT
-NoHemodialysisPeritoneal dialysisCRRT
-ICU?
-NoYes
-Sepsis / shock?
-NoYes
-Nephrotoxins?
-NoYes
-3. Regimen, targets and levels
-Current dose (mg)
-Interval (h)
-Infusion time (h)
-MIC (mg/L)
-Target AUC24 (mg·h/L)
-Target trough (mg/L)
-Include loading dose?
-NoYes
-Level 1 (mg/L)
-Level 1: h after END of infusion
-Level 2, optional (mg/L)
-Level 2: h after END of infusion
-Levels must be at steady state. A pre-dose trough is drawn (interval − infusion time) h after the end of infusion. One level: individual clearance is fitted; two levels: Sawchuk-Zaske.
+const PPH={page:[18,120,18,89],pht:[100,250,140,200],pwt:[20,400,40,150],palb:[10,60,33,50],ptgt:[5,25,10,20],pld:[25,1200,200,600],pd2:[25,1200,200,600],plvl:[0,50,5,25],plvl2:[0,50,5,25],pdd:[0,365,0,365],pcur:[0,50,0,25]};
+const PLN={page:'Age',psex:'Sex',pht:'Height',pwt:'Weight',pscr:'Serum creatinine',ptgt:'Target level',pld:'Current dose',pd2:'Second level dose',plvl:'Measured level',plvl2:'Second level',pdd:'Days on dose',pcur:'Level before loading',palb:'Albumin'};
+function prun(){const g=i=>v(i),o=$('pout'),m=[],e=[],w=[];
+ ['page','psex','pht','pwt','pscr','ptgt'].forEach(i=>{if(g(i)===null)m.push(PLN[i])});
+ if(g('plvl2')!==null&&g('pd2')===null)m.push('Second level dose');
+ if(g('pd2')!==null&&g('plvl2')===null)m.push('Second level');
+ document.querySelectorAll('#phen input').forEach(i=>i.classList.remove('w','e'));
+ const s0=g('pscr');if(s0!==null){const u=$('punit').value=='umol'?s0:s0*88.4;if(u<20||u>2000)e.push('Serum creatinine outside hard limit (20-2000 umol/L)');else if(u<45||u>350)w.push('Serum creatinine unusual (usual 45-350 umol/L)')}
+ for(const id in PPH){const x=g(id);if(x===null)continue;const[a,b,c,d]=PPH[id];if(x<a||x>b){$(id).classList.add('e');e.push(PLN[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(PLN[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ for(const L of['plvl','plvl2']){const x=g(L);if(x!==null&&x>30)e.push('Level above 30 mg/L: severe toxicity - hold and assess urgently');else if(x!==null&&x>20)w.push('Level above 20 mg/L: toxicity is likely - review the dose')}
+ let h='<div class="card"><h2>Phenytoin result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, SCr, target level) with valid values.</div></div>';return}
+ const fem=$('psex').value=='Female',ht=g('pht'),wt=g('pwt'),age=g('page'),sc=$('punit').value=='umol'?g('pscr')/88.4:g('pscr');
+ const ibw=(fem?45.5:50)+2.3*Math.max(0,ht/2.54-60),dw=wt>1.2*ibw?ibw:wt,crcl=Math.max(0,(140-age)*dw/(72*sc))*(fem?.85:1);
+ const hep=$('phf').value=='Yes',dial=$('pdial').value!='No',renal=crcl<=20||dial;
+ const F={Capsule:.95,'Chewable tablet':1,Suspension:.9,IV:1}[$('pform').value],T=g('ptgt'),alb=g('palb'),albd=alb===null?null:alb/10;
+ let Vmax=7*dw*(hep?.75:1),Km=4,src='Population: Vmax = 7 mg/kg/day x '+f(dw)+' kg dosing weight'+(hep?' x 0.75 (hepatic disease)':'')+', Km = 4 mg/L';
+ const corr=C=>albd===null?C:C/((renal?.1:.2)*albd+.1);
+ const lvl=g('plvl'),lvl2=g('plvl2'),d1=g('pld'),d2=g('pd2'),E1=d1===null?null:F*d1,E2=d2===null?null:F*d2;
+ let flag=hep||dial||(alb!==null&&alb<33);
+ if(lvl!==null&&albd!==null){const cn=corr(lvl);h+='<div class="kv"><span>Albumin-corrected level (Sheiner-Tozer)</span><b>'+f(lvl,1)+' &rarr; '+f(cn,1)+' mg/L</b></div>'}
+ if(alb!==null&&alb<33)h+='<div class="msg w">Albumin below 33 g/L: total levels are unreliable - measure a free (unbound) level (target 1-2 mg/L).</div>';
+ if(dial)h+='<div class="msg w">Dialysis/CRRT: phenytoin is not removed significantly, but protein binding drops - dose by free levels, not total.</div>';
+ if(hep)h+='<div class="msg w">Hepatic disease: Vmax is reduced and variable (population x0.75) - check levels.</div>';
+ const same=E1!==null&&E2!==null&&Math.abs(d1-d2)<1e-9;
+ if(same)h+='<div class="msg e">Two levels on the same dose: individual Km/Vmax cannot be solved (doses must differ). Using the single-level method.</div>';
+ if(!same&&E1&&E2&&lvl!==null&&lvl2!==null&&$('plss').value=='Yes'){
+  const C1=corr(lvl),C2=corr(lvl2),den=E1*C2-E2*C1;
+  if(Math.abs(den)<1e-9)h+='<div class="msg e">The two dose/level pairs are inconsistent: individual Km/Vmax cannot be solved.</div>';
+  else{const k=C1*C2*(E2-E1)/den,vm=E1*(k+C1)/C1;
+   if(k<=0||k>20||vm<=Math.max(E1,E2))h+='<div class="msg e">Calculated individual Km ('+f(k,1)+' mg/L) or Vmax ('+f(vm,0)+' mg/day) is implausible: check the doses and levels.</div>';
+   else{Km=k;Vmax=vm;src='Individual: two dose/level pairs (Km '+f(Km,1)+' mg/L, Vmax '+f(Vmax,0)+' mg/day)';
+    if(Km<2||Km>8)h+='<div class="msg w">Individual Km '+f(Km,1)+' mg/L is outside the usual 2-8: small dose changes will move the level a lot.</div>'}}}
+ else if(E1&&lvl!==null&&$('plss').value=='Yes'){const C1=corr(lvl);Vmax=E1*(Km+C1)/C1;src='Individual: one steady-state level (Vmax '+f(Vmax,0)+' mg/day, Km fixed at 4 mg/L)';
+  if(Vmax<=E1)h+='<div class="msg e">Estimated Vmax ('+f(Vmax,0)+' mg/day) is not above the current dose: the level will keep rising on this regimen.</div>'}
+ else if(lvl!==null&&$('plss').value!='Yes')h+='<div class="msg w">Level not at steady state: individualization is unreliable. Phenytoin needs 7-14 days on a stable dose.</div>';
+ h+='<div class="kv"><span>Dosing weight</span><b>'+f(dw)+' kg'+(wt>1.2*ibw?' (IBW)':'')+'</b><span>Vmax / Km</span><b>'+f(Vmax,0)+' mg/day / '+f(Km,1)+' mg/L</b><span>CrCl (binding context)</span><b>'+f(crcl)+' mL/min</b></div><div class="sm">'+src+'.</div>';
+ const dm=Vmax*T/(Km+T)/F;
+ h+='<h2 style="margin-top:12px">Recommended maintenance</h2>';
+ if(dm>600){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - calculated daily dose ('+f(dm,0)+' mg/day) exceeds the safety cap (600 mg/day). Pharmacist review required.</div>'}
+ else{const rd=Math.max(100,Math.round(dm/25)*25),cp=Km*F*rd/(Vmax-F*rd);
+  h+='<div class="big">'+rd+' mg/day PO ('+$('pform').value+')</div><div class="kv"><span>Calculated before rounding</span><b>'+f(dm,0)+' mg/day</b><span>Predicted steady-state level</span><b>'+f(cp,1)+' mg/L</b></div>';
+  if(F*rd>=Vmax){flag=true;h+='<div class="msg e">Rounded dose reaches Vmax: the level would rise without bound. Pharmacist review required.</div>'}
+  else if(cp<10||cp>20){flag=true;h+='<div class="msg w">Predicted level '+f(cp,1)+' mg/L is outside the usual 10-20 after rounding: review the regimen.</div>'}
+  h+='<div class="sm">Nonlinear kinetics: near Vmax a small dose change moves the level a lot. Recheck a pre-dose level after 7-14 days.</div>'}
+ if(d1){h+='<h2 style="margin-top:12px">Current: '+d1+' mg/day</h2>';
+  if(F*d1>=Vmax){flag=true;h+='<div class="msg e">Current dose is at or above Vmax ('+f(Vmax,0)+' mg/day): the level will keep rising. Reduce the dose and check a level.</div>'}
+  else{const cp=Km*F*d1/(Vmax-F*d1);h+='<div class="kv"><span>Predicted steady-state level</span><b>'+f(cp,1)+' mg/L</b></div>';
+   if(cp>20){flag=true;h+='<div class="msg w">Predicted level above 20 mg/L: toxicity risk (nystagmus, ataxia, sedation).</div>'}}
+  if(g('pdd')!==null&&g('pdd')<7){flag=true;h+='<div class="msg w">Less than 7 days on this dose: probably not at steady state, so predictions are unreliable.</div>'}}
+ if($('pload').value=='Yes'){const C0=g('pcur')||0,LD=.7*dw*(T-C0),Lr=Math.round(LD/25)*25;
+  h+='<h2 style="margin-top:12px">Loading dose (IV)</h2>';
+  if(Lr<=0)h+='<div class="sm">Level before loading is already at or above the target: no loading dose.</div>';
+  else if(Lr>1500||Lr/dw>20){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - loading dose exceeds the safety cap (20 mg/kg or 1500 mg). Pharmacist review required.</div>'}
+  else h+='<div class="big">'+Lr+' mg IV once</div><div class="kv"><span>Per kg (dosing weight)</span><b>'+f(Lr/dw,1)+' mg/kg</b><span>Minimum infusion time at 50 mg/min</span><b>'+f(Lr/50,0)+' min</b></div><div class="sm">Infuse at 25-50 mg/min or less with ECG and blood pressure monitoring. Oral loading is not recommended. Phenytoin sodium contains about 92% phenytoin acid.</div>'}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#phen input,#phen select').forEach(e=>e.oninput=prun);prun();
 
-Not clinically validated. Population one-compartment model (CL = 0.65 × CrCl; Vd = 0.7 L/kg); Cockcroft-Gault with adjusted weight if BMI ≥ 30. Validate locally before clinical use.
-Plans (mock-up, no payment)
-Free: Vancomycin, Gentamicin, Amikacin, Tobramycin, Digoxin, Theophylline, Phenytoin, Tacrolimus, Cyclosporine, Linezolid, Fluconazole. Pro: more drugs, saved cases, PDF notes, institutional protocols. Subscriptions need accounts, a backend and store billing; they are not built here.
+const KIN={kage:[18,120,18,89],kht:[100,250,140,200],kwt:[20,400,40,150],ktgt:[3,20,5,12],kdose:[.5,20,1,8],klvl:[0,60,3,15],kdays:[0,365,0,365]};
+const KLN={kage:'Age',ksex:'Sex',kht:'Height',kwt:'Weight',kscr:'Serum creatinine',ktgt:'Target trough',kdose:'Current dose',klvl:'Measured trough',kdays:'Days on dose'};
+function krun(){const g=i=>v(i),o=$('kout'),m=[],e=[],w=[];
+ ['kage','ksex','kht','kwt','kscr','ktgt'].forEach(i=>{if(g(i)===null)m.push(KLN[i])});
+ document.querySelectorAll('#tacro input').forEach(i=>i.classList.remove('w','e'));
+ const s0=g('kscr');if(s0!==null){const u=$('kunit').value=='umol'?s0:s0*88.4;if(u<20||u>2000)e.push('Serum creatinine outside hard limit (20-2000 umol/L)');else if(u<45||u>350)w.push('Serum creatinine unusual (usual 45-350 umol/L)')}
+ for(const id in KIN){const x=g(id);if(x===null)continue;const[a,b,c,d]=KIN[id];if(x<a||x>b){$(id).classList.add('e');e.push(KLN[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(KLN[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ let h='<div class="card"><h2>Tacrolimus result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, SCr, target trough) with valid values.</div></div>';return}
+ const fem=$('ksex').value=='Female',ht=g('kht'),wt=g('kwt'),age=g('kage'),sc=$('kunit').value=='umol'?g('kscr')/88.4:g('kscr');
+ const crcl=Math.max(0,(140-age)*wt/(72*sc))*(fem?.85:1);
+ const hep=$('khep').value=='Yes',int=$('kint').value,dial=$('kdial').value!='No';
+ let flag=hep||int!='none'||dial;
+ const st0=.075*wt*(hep?.6:1)*(int=='up'?.6:1)*(int=='dn'?1.3:1),st=Math.round(st0*2)/2;
+ h+='<div class="kv"><span>Starting dose</span><b>'+st+' mg/day PO divided q12h</b><span>Per kg (actual weight)</span><b>'+f(st0/wt,3)+' mg/kg/day</b><span>CrCl (context)</span><b>'+f(crcl)+' mL/min</b></div><div class="sm">Usual range 0.05-0.1 mg/kg/day; lower start with hepatic disease or an azole/macrolide. Trough pre-dose after 3-5 days on a stable dose.</div>';
+ if(hep)h+='<div class="msg w">Hepatic disease: clearance is reduced and the half-life longer - start low, check the level.</div>';
+ if(int=='up')h+='<div class="msg w">Azole/macrolide interaction: tacrolimus exposure rises sharply - reduce the dose by about 30-50% and recheck in 2-3 days.</div>';
+ if(int=='dn')h+='<div class="msg w">Enzyme inducer: tacrolimus requirements usually rise several-fold - adjust by levels.</div>';
+ if(dial)h+='<div class="msg w">Dialysis/CRRT: tacrolimus is not removed significantly by dialysis, but it is nephrotoxic - dose by trough levels and renal trends.</div>';
+ const D=g('kdose'),L=g('klvl'),dd=g('kdays');
+ if(D){h+='<h2 style="margin-top:12px">Current: '+D+' mg/day</h2>';
+  if(L===null)h+='<div class="sm">Enter the measured trough to adjust the dose.</div>';
+  else{if(dd!==null&&dd<3){flag=true;h+='<div class="msg w">Less than 3 days on this dose: probably not at steady state - the adjustment is unreliable.</div>'}
+   if(L>20){flag=true;h+='<div class="msg e">Trough above 20 ng/mL: hold/reduce and assess neurotoxicity and nephrotoxicity urgently.</div>'}
+   else if(L>15){flag=true;h+='<div class="msg w">Trough above 15 ng/mL: above the usual range - review the dose.</div>'}
+   if(L<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
+   else{let a=D*g('ktgt')/L,lim=false;if(a>1.5*D){a=1.5*D;lim=true}if(a<.5*D){a=.5*D;lim=true}
+    const ar=Math.round(a*2)/2;
+    h+='<h2 style="margin-top:12px">Adjusted dose</h2><div class="big">'+ar+' mg/day divided q12h</div><div class="kv"><span>Expected trough after adjustment</span><b>'+f(L*ar/D,1)+' ng/mL</b></div>'+(lim?'<div class="sm">Change limited to +/-50% per step: recheck the trough in 3-5 days.</div>':'<div class="sm">Linear (first-order) adjustment: recheck the trough in 3-5 days.</div>')}}}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#tacro input,#tacro select').forEach(e=>e.oninput=krun);krun();
+$('ktr').onchange=()=>{$('ktgt').value=$('ktr').value=='Heart transplant'?12:8;krun()};
+
+const CIN={cage:[18,120,18,89],cht:[100,250,140,200],cwt:[20,400,40,150],ctgt:[50,600,100,300],cdose:[25,1500,100,500],clvl:[0,1500,50,400],cdays:[0,365,0,365]};
+const CLN={cage:'Age',csex:'Sex',cht:'Height',cwt:'Weight',cscr:'Serum creatinine',ctgt:'Target trough',cdose:'Current dose',clvl:'Measured trough',cdays:'Days on dose'};
+function crun(){const g=i=>v(i),o=$('cout'),m=[],e=[],w=[];
+ ['cage','csex','cht','cwt','cscr','ctgt'].forEach(i=>{if(g(i)===null)m.push(CLN[i])});
+ document.querySelectorAll('#cyclo input').forEach(i=>i.classList.remove('w','e'));
+ const s0=g('cscr');if(s0!==null){const u=$('cunit').value=='umol'?s0:s0*88.4;if(u<20||u>2000)e.push('Serum creatinine outside hard limit (20-2000 umol/L)');else if(u<45||u>350)w.push('Serum creatinine unusual (usual 45-350 umol/L)')}
+ for(const id in CIN){const x=g(id);if(x===null)continue;const[a,b,c,d]=CIN[id];if(x<a||x>b){$(id).classList.add('e');e.push(CLN[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(CLN[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ let h='<div class="card"><h2>Cyclosporine result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, height, weight, SCr, target trough) with valid values.</div></div>';return}
+ const fem=$('csex').value=='Female',ht=g('cht'),wt=g('cwt'),age=g('cage'),sc=$('cunit').value=='umol'?g('cscr')/88.4:g('cscr');
+ const crcl=Math.max(0,(140-age)*wt/(72*sc))*(fem?.85:1);
+ const hep=$('chep').value=='Yes',int=$('cint').value,dial=$('cdial').value!='No';
+ let flag=hep||int!='none'||dial;
+ const st0=4*wt*(hep?.6:1)*(int=='up'?.6:1),st=Math.round(st0/25)*25;
+ h+='<div class="kv"><span>Starting dose</span><b>'+st+' mg/day PO divided q12h</b><span>Per kg (actual weight)</span><b>'+f(st0/wt,1)+' mg/kg/day</b><span>CrCl (context)</span><b>'+f(crcl)+' mL/min</b></div><div class="sm">Usual range 3-5 mg/kg/day ('+$('cform').value+'); lower start with hepatic disease or an interacting drug. Trough pre-dose at steady state (2-4 days). Modified and original forms are NOT interchangeable.</div>';
+ if(hep)h+='<div class="msg w">Hepatic disease: clearance is reduced - start low, check the level.</div>';
+ if(int=='up')h+='<div class="msg w">CYP3A inhibitor: cyclosporine exposure rises - reduce the dose and recheck in 2-3 days.</div>';
+ if(int=='dn')h+='<div class="msg w">Enzyme inducer: cyclosporine requirements usually rise - adjust by levels.</div>';
+ if(dial)h+='<div class="msg w">Dialysis/CRRT: cyclosporine is not removed significantly, but it is nephrotoxic - dose by trough levels and renal trends.</div>';
+ const D=g('cdose'),L=g('clvl'),dd=g('cdays');
+ if(D){h+='<h2 style="margin-top:12px">Current: '+D+' mg/day</h2>';
+  if(L===null)h+='<div class="sm">Enter the measured trough to adjust the dose.</div>';
+  else{if(dd!==null&&dd<2){flag=true;h+='<div class="msg w">Less than 2 days on this dose: probably not at steady state - the adjustment is unreliable.</div>'}
+   if(L>600){flag=true;h+='<div class="msg e">Trough above 600 ng/mL: high toxicity risk - hold/reduce and assess urgently.</div>'}
+   else if(L>400){flag=true;h+='<div class="msg w">Trough above 400 ng/mL: above the usual range - review the dose.</div>'}
+   if(L<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
+   else{let a=D*g('ctgt')/L,lim=false;if(a>1.5*D){a=1.5*D;lim=true}if(a<.5*D){a=.5*D;lim=true}
+    const ar=Math.round(a/25)*25;
+    h+='<h2 style="margin-top:12px">Adjusted dose</h2><div class="big">'+ar+' mg/day divided q12h</div><div class="kv"><span>Expected trough after adjustment</span><b>'+f(L*ar/D,0)+' ng/mL</b></div>'+(lim?'<div class="sm">Change limited to +/-50% per step: recheck the trough in 2-4 days.</div>':'<div class="sm">Linear (first-order) adjustment: recheck the trough in 2-4 days.</div>')}}}
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#cyclo input,#cyclo select').forEach(e=>e.oninput=crun);crun();
+
+const ZIN={zage:[18,120,18,89],zwt:[20,400,40,150],zlvl:[0,40,2,8],zdays:[0,180,0,28]};
+function zrun(){const g=i=>v(i),o=$('zout'),m=[],e=[],w=[];
+ ['zage','zsex','zwt','zscr'].forEach(i=>{if(g(i)===null)m.push({zage:'Age',zsex:'Sex',zwt:'Weight',zscr:'Serum creatinine'}[i])});
+ document.querySelectorAll('#linez input').forEach(i=>i.classList.remove('w','e'));
+ const s0=g('zscr');if(s0!==null){const u=$('zunit').value=='umol'?s0:s0*88.4;if(u<20||u>2000)e.push('Serum creatinine outside hard limit (20-2000 umol/L)');else if(u<45||u>350)w.push('Serum creatinine unusual (usual 45-350 umol/L)')}
+ const ZLN={zage:'Age',zwt:'Weight',zlvl:'Measured trough',zdays:'Days on therapy'};
+ for(const id in ZIN){const x=g(id);if(x===null)continue;const[a,b,c,d]=ZIN[id];if(x<a||x>b){$(id).classList.add('e');e.push(ZLN[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(ZLN[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ let h='<div class="card"><h2>Linezolid result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, weight, SCr) with valid values.</div></div>';return}
+ const fem=$('zsex').value=='Female',age=g('zage'),wt=g('zwt'),sc=$('zunit').value=='umol'?g('zscr')/88.4:g('zscr');
+ const crcl=Math.max(0,(140-age)*wt/(72*sc))*(fem?.85:1),dy=$('zdial').value;
+ let flag=crcl<30||dy!='No'||$('zser').value=='Yes';
+ h+='<div class="kv"><span>CrCl (Cockcroft-Gault, actual weight)</span><b>'+f(crcl)+' mL/min</b></div>';
+ h+='<h2 style="margin-top:12px">Recommended regimen</h2><div class="big">600 mg every 12 h, IV or PO</div><div class="sm">Oral bioavailability is about 100% - IV and PO are interchangeable. No weight adjustment.</div>';
+ if(crcl<30&&dy=='No')h+='<div class="msg w">CrCl below 30: many protocols use 600 mg every 24 h, but the evidence is mixed - follow the local protocol and levels.</div>';
+ if(dy=='Hemodialysis')h+='<div class="msg w">Hemodialysis removes linezolid: give the dose after the session.</div>';
+ else if(dy=='CRRT')h+='<div class="msg w">CRRT removes linezolid partially: follow the protocol and levels.</div>';
+ else if(dy=='Peritoneal dialysis')h+='<div class="msg w">Peritoneal dialysis: follow the protocol and levels.</div>';
+ const L=g('zlvl');
+ if(L!==null){if(L<2){flag=true;h+='<div class="msg w">Trough below 2 mg/L: under-exposure is linked to resistance and worse outcomes.</div>'}
+  else if(L<=8)h+='<div class="msg m">Trough '+f(L,1)+' mg/L is within the usual target (2-8 mg/L).</div>';
+  else if(L<=12){flag=true;h+='<div class="msg w">Trough above 8 mg/L: linked to thrombocytopenia and lactic acidosis - review the dose/schedule.</div>'}
+  else{flag=true;h+='<div class="msg e">Trough above 12 mg/L: high toxicity risk (myelosuppression, acidosis) - hold and review.</div>'}}
+ const dd=g('zdays');
+ if(dd!==null&&dd>28){flag=true;h+='<div class="msg w">More than 28 days of therapy: peripheral and optic neuropathy and myelosuppression risk - review the need and check counts.</div>'}
+ if($('zser').value=='Yes')h+='<div class="msg w">Serotonergic drug: risk of serotonin syndrome - watch for agitation, hyperreflexia, fever.</div>';
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#linez input,#linez select').forEach(e=>e.oninput=zrun);zrun();
+
+const FIN={fage:[18,120,18,89],fwt:[20,400,40,150]};
+function frun(){const g=i=>v(i),o=$('fout'),m=[],e=[],w=[];
+ ['fage','fsex','fwt','fscr'].forEach(i=>{if(g(i)===null)m.push({fage:'Age',fsex:'Sex',fwt:'Weight',fscr:'Serum creatinine'}[i])});
+ const FLN={fage:'Age',fwt:'Weight'};
+ for(const id in FIN){const x=g(id);if(x===null)continue;const[a,b,c,d]=FIN[id];if(x<a||x>b){$(id).classList.add('e');e.push(FLN[id]+' '+x+' outside hard limit '+a+'-'+b)}else if(x<c||x>d){$(id).classList.add('w');w.push(FLN[id]+' '+x+' unusual (usual '+c+'-'+d+')')}}
+ const s0=g('fscr');if(s0!==null){const u=$('funit').value=='umol'?s0:s0*88.4;if(u<20||u>2000)e.push('Serum creatinine outside hard limit (20-2000 umol/L)');else if(u<45||u>350)w.push('Serum creatinine unusual (usual 45-350 umol/L)')}
+ let h='<div class="card"><h2>Fluconazole result</h2>';e.forEach(t=>h+='<div class="msg e">INVALID: '+t+'</div>');w.forEach(t=>h+='<div class="msg w">WARNING: '+t+'</div>');
+ if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, weight, SCr) with valid values.</div></div>';return}
+ const fem=$('fsex').value=='Female',age=g('fage'),wt=g('fwt'),sc=$('funit').value=='umol'?g('fscr')/88.4:g('fscr');
+ const crcl=Math.max(0,(140-age)*wt/(72*sc))*(fem?.85:1),dy=$('fdial').value,ind=$('find').value;
+ const rd=x=>Math.max(50,Math.round(x/50)*50);
+ let LD0,M0;if(ind=='Oesophageal candidiasis'){LD0=200;M0=100}else{LD0=Math.min(12*wt,800);M0=Math.min(6*wt,400)}
+ const LD=rd(LD0);let M=rd(M0),half=false;
+ if(crcl<=50&&dy=='No'){M=rd(M0/2);half=true}
+ let flag=half||dy!='No';
+ h+='<div class="kv"><span>CrCl (Cockcroft-Gault)</span><b>'+f(crcl)+' mL/min</b></div>';
+ h+='<h2 style="margin-top:12px">Recommended regimen</h2><div class="big">Load '+LD+' mg once, then '+M+' mg every 24 h</div><div class="kv"><span>Per kg (actual weight)</span><b>'+f(LD/wt,0)+' / '+f(M/wt,0)+' mg/kg</b><span>Calculated before rounding</span><b>'+f(LD0,0)+' / '+f(M0,0)+' mg</b></div>';
+ if(ind=='Other / per protocol')h+='<div class="sm">Dosing shown is the invasive-candidiasis schedule - confirm the indication-specific dose.</div>';
+ if(ind=='Oesophageal candidiasis')h+='<div class="sm">Oesophageal: 200 mg day 1 then 100 mg/day; uncomplicated vaginal candidiasis is a single 150 mg dose.</div>';
+ if(half)h+='<div class="msg w">CrCl 50 or below: the maintenance dose is halved (the loading dose is unchanged).</div>';
+ if(dy=='Hemodialysis')h+='<div class="msg w">Hemodialysis removes fluconazole: give the full dose after each session.</div>';
+ else if(dy=='CRRT')h+='<div class="msg w">CRRT: removal depends on effluent - follow the protocol and levels.</div>';
+ else if(dy=='Peritoneal dialysis')h+='<div class="msg w">Peritoneal dialysis: reduced clearance - dose by protocol/levels.</div>';
+ h+='<div class="sm">Watch QT (ECG), liver enzymes and CYP interactions (warfarin, sulfonylureas, statins). No hepatic dose adjustment.</div>';
+ h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
+document.querySelectorAll('#fluc input,#fluc select').forEach(e=>e.oninput=frun);frun();
+
+
+</script><script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})</script></body></html>
