@@ -4,7 +4,7 @@
    - Fetch: cache-first for static assets, network-first with cache fallback for navigation.
    - Activate: clean up old caches, take control immediately.
 */
-const CACHE = 'dosingsuite-v2';
+const CACHE = 'dosingsuite-v6';
 const APP_SHELL = [
   './',
   './index.html',
