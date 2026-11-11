@@ -20,9 +20,9 @@ input.w{border-color:var(--wn);box-shadow:0 0 0 1px var(--wn)}input.e{border-col
 svg{width:100%;height:auto;max-width:100%}textarea{width:100%;height:150px;box-sizing:border-box;background:var(--in);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px}
 button.c{padding:8px 12px;border-radius:8px;border:1px solid var(--pri);background:transparent;color:var(--pri);cursor:pointer}.sm{font-size:12px;color:var(--mut)}
 .hide{display:none}
-</style></head><body>
+</style></head><body><div class="card"><h2>Safety patch 7.1 - research/testing only</h2><p>Navigation repaired. Selected arithmetic guards added. This is NOT a comprehensive clinical validation. Legacy test counts in this file were not independently reproduced. Transplant starting doses and interaction multipliers remain provisional model assumptions, not prescribing instructions. Phenytoin total-level correction is an estimate; free levels and specialist review are needed with altered binding. All calculated regimens require pharmacist review.</p><p>Linezolid renal information checked against Pfizer ZYVOX clinical pharmacology. Fluconazole renal information checked against Pfizer DIFLUCAN dosage and administration. See the accompanying audit report.</p></div>
 <h1>Clinical Dosing Suite <span class="sm">prototype</span></h1>
-<div class="sm" id="ver">Version 7.0 · 11 Nov 2026 · 11 drug modules</div>
+<div class="sm" id="ver">Version 7.1-safety-patch · 11 Nov 2026 · 11 drug modules</div>
 <div class="sm">Adult intermittent IV vancomycin. Decision support only: it does not replace clinical judgement or hospital protocol. Prototype: not clinically validated.</div>
 <div class="card"><div class="modes" id="drugs"><button data-d="vanc" class="on">Vancomycin</button><button data-d="gent">Gentamicin</button><button data-d="amik">Amikacin</button><button data-d="tobra">Tobramycin</button><button data-d="dig">Digoxin</button><button data-d="theo">Theophylline</button><button data-d="phen">Phenytoin</button><button data-d="tacro">Tacrolimus</button><button data-d="cyclo">Cyclosporine</button><button data-d="linez">Linezolid</button><button data-d="fluc">Fluconazole</button></div><div class="sm" id="badge" style="margin-top:6px"></div></div>
 <div id="vanc"><div class="card"><h2>1. Choose calculation</h2><div class="modes" id="modes">
@@ -173,7 +173,7 @@ button.c{padding:8px 12px;border-radius:8px;border:1px solid var(--pri);backgrou
 <div><label>Days on therapy, optional</label><input id="zdays" type="number" step="any"></div>
 <div><label>Measured trough (mg/L), optional</label><input id="zlvl" type="number" step="any"></div>
 <div><label>Serotonergic drug (SSRI, SNRI, TCA, MAOI...)?</label><select id="zser"><option>No</option><option>Yes</option></select></div></div>
-<div class="sm">Standard dosing: 600 mg q12h IV or PO (oral bioavailability about 100%). No renal adjustment for CrCl 30 or above; with CrCl below 30 many protocols use 600 mg q24h - evidence is mixed, follow the local protocol. Linezolid is removed by dialysis: dose after the session. TDM target trough 2-8 mg/L. Watch thrombocytopenia (and anemia), lactic acidosis, peripheral/optic neuropathy beyond 28 days, and serotonin syndrome with serotonergic drugs.</div></div><div id="zout"></div></div>
+<div class="sm">Standard dosing: 600 mg q12h IV or PO (oral bioavailability about 100%). No automatic renal dose adjustment per manufacturer; renal impairment warrants CBC monitoring and individualized specialist/TDM review. Linezolid is removed by dialysis: dose after the session. TDM target trough 2-8 mg/L. Watch thrombocytopenia (and anemia), lactic acidosis, peripheral/optic neuropathy beyond 28 days, and serotonin syndrome with serotonergic drugs.</div></div><div id="zout"></div></div>
 <div id="fluc" class="hide"><div class="card"><h2>Fluconazole (adult) - patient and regimen</h2><div class="grid">
 <div><label>Age (years)</label><input id="fage" type="number" step="any"></div>
 <div><label>Sex</label><select id="fsex"><option value="">-</option><option>Male</option><option>Female</option></select></div>
@@ -248,8 +248,8 @@ function run(){const c=check(),o=$('out');let h='<div class="card"><h2>4. Result
  h+='<h2 style="margin-top:12px">Progress note</h2><textarea id="note" readonly>'+note+'</textarea><button class="c" id="cp">Copy note</button></div>';o.innerHTML=h;
  $('cp').onclick=()=>{const t=$('note');t.select();try{navigator.clipboard.writeText(t.value)}catch(x){try{document.execCommand('copy')}catch(y){}}$('cp').textContent='Copied'}}
 vis();run();
-document.querySelectorAll('#drugs button[data-d]').forEach(b=>b.onclick=()=>{document.querySelectorAll('#drugs button').forEach(x=>x.classList.toggle('on',x==b));const d=b.dataset.d,SEC={vanc:'vanc',gent:'gent',amik:'gent',tobra:'gent',dig:'dig',theo:'theo',phen:'Phenytoin: constants checked against references, math verified (v6) · pending clinical review',tacro:'Tacrolimus: starting doses per label, math verified (v6) · pending clinical review',cyclo:'Cyclosporine: starting doses per label, math verified (v6) · pending clinical review',linez:'Linezolid: reviewed against references, logic verified (v6) · pending clinical review',fluc:'Fluconazole: doses per guidelines, math verified (v6) · pending clinical review'};document.querySelectorAll('#vanc,#gent,#dig,#theo,#phen,#tacro,#cyclo,#linez,#fluc').forEach(x=>x.classList.add('hide'));$(SEC[d]).classList.remove('hide');if(SEC[d]=='gent')gset(d);$('badge').textContent=BD[d]});
-const BD={vanc:'Vancomycin: math verified (250/250 checks vs independent model) · pending clinical review',gent:'Gentamicin: math verified (24/24 checks vs independent simulation) · pending clinical review',amik:'Amikacin: math verified (28/28 checks vs independent simulation) · pending clinical review',theo:'Theophylline: math verified (51/51 checks vs independent simulation) · pending clinical review',dig:'Digoxin: math verified (48/48 checks vs independent simulation) · pending clinical review',tobra:'Tobramycin: math verified (28/28 checks vs independent simulation) · pending clinical review',phen:'Phenytoin: math verified (58/58 checks vs independent simulation) · pending clinical review',tacro:'Tacrolimus: math verified (29/29 checks vs independent calculation) · pending clinical review',cyclo:'Cyclosporine: math verified (29/29 checks vs independent calculation) · pending clinical review',linez:'Linezolid: dosing verified (2/2 checks) · pending clinical review',fluc:'Fluconazole: dosing verified (6/6 checks) · pending clinical review'};const NM={gent:'Gentamicin',amik:'Amikacin',tobra:'Tobramycin'};
+document.querySelectorAll('#drugs button[data-d]').forEach(b=>b.onclick=()=>{document.querySelectorAll('#drugs button').forEach(x=>x.classList.toggle('on',x==b));const d=b.dataset.d,SEC={vanc:'vanc',gent:'gent',amik:'gent',tobra:'gent',dig:'dig',theo:'theo',phen:'phen',tacro:'tacro',cyclo:'cyclo',linez:'linez',fluc:'fluc'};document.querySelectorAll('#vanc,#gent,#dig,#theo,#phen,#tacro,#cyclo,#linez,#fluc').forEach(x=>x.classList.add('hide'));$(SEC[d]).classList.remove('hide');if(SEC[d]=='gent')gset(d);$('badge').textContent=BD[d]});
+const BD={vanc:'Vancomycin: legacy verification claim not reproduced in this patch · pending clinical review',gent:'Gentamicin: legacy verification claim not reproduced in this patch · pending clinical review',amik:'Amikacin: legacy verification claim not reproduced in this patch · pending clinical review',theo:'Theophylline: legacy verification claim not reproduced in this patch · pending clinical review',dig:'Digoxin: legacy verification claim not reproduced in this patch · pending clinical review',tobra:'Tobramycin: legacy verification claim not reproduced in this patch · pending clinical review',phen:'Phenytoin: legacy verification claim not reproduced in this patch · pending clinical review',tacro:'Tacrolimus: legacy verification claim not reproduced in this patch · pending clinical review',cyclo:'Cyclosporine: legacy verification claim not reproduced in this patch · pending clinical review',linez:'Linezolid: dosing verified (2/2 checks) · pending clinical review',fluc:'Fluconazole: dosing verified (6/6 checks) · pending clinical review'};const NM={gent:'Gentamicin',amik:'Amikacin',tobra:'Tobramycin'};
 function gset(d){const A=d=='amik';$('gdrug').value=d;$('gp').value=A?25:8;$('gt').value=A?5:1;$('gkm').value=A?'mz':'sz';$('gtitle').textContent=NM[d]+' (traditional dosing) - patient and regimen';grun()}
 function grun(){const g=i=>v(i),o=$('gout'),m=[],e=[],w=[];['gage','gsex','ght','gwt','gscr','gp','gt'].forEach(i=>{if(g(i)===null)m.push(i)});
  document.querySelectorAll('#gent input').forEach(i=>i.classList.remove('w','e'));
@@ -366,29 +366,29 @@ function prun(){const g=i=>v(i),o=$('pout'),m=[],e=[],w=[];
  let Vmax=7*dw*(hep?.75:1),Km=4,src='Population: Vmax = 7 mg/kg/day x '+f(dw)+' kg dosing weight'+(hep?' x 0.75 (hepatic disease)':'')+', Km = 4 mg/L';
  const corr=C=>albd===null?C:C/((renal?.1:.2)*albd+.1);
  const lvl=g('plvl'),lvl2=g('plvl2'),d1=g('pld'),d2=g('pd2'),E1=d1===null?null:F*d1,E2=d2===null?null:F*d2;
- let flag=hep||dial||(alb!==null&&alb<33);
+ let flag=hep||dial||(alb!==null&&alb<33); if((lvl!==null&&lvl<=0)||(lvl2!==null&&lvl2<=0)){o.innerHTML=h+'<div class="msg e">Zero concentration cannot be used to fit Michaelis-Menten parameters. Verify the assay and sampling; no dose calculated.</div></div>';return}
  if(lvl!==null&&albd!==null){const cn=corr(lvl);h+='<div class="kv"><span>Albumin-corrected level (Sheiner-Tozer)</span><b>'+f(lvl,1)+' &rarr; '+f(cn,1)+' mg/L</b></div>'}
  if(alb!==null&&alb<33)h+='<div class="msg w">Albumin below 33 g/L: total levels are unreliable - measure a free (unbound) level (target 1-2 mg/L).</div>';
  if(dial)h+='<div class="msg w">Dialysis/CRRT: phenytoin is not removed significantly, but protein binding drops - dose by free levels, not total.</div>';
  if(hep)h+='<div class="msg w">Hepatic disease: Vmax is reduced and variable (population x0.75) - check levels.</div>';
  const same=E1!==null&&E2!==null&&Math.abs(d1-d2)<1e-9;
  if(same)h+='<div class="msg e">Two levels on the same dose: individual Km/Vmax cannot be solved (doses must differ). Using the single-level method.</div>';
- if(!same&&E1&&E2&&lvl!==null&&lvl2!==null&&$('plss').value=='Yes'){
+ if(!same&&E1&&E2&&lvl>0&&lvl2>0&&$('plss').value=='Yes'){
   const C1=corr(lvl),C2=corr(lvl2),den=E1*C2-E2*C1;
   if(Math.abs(den)<1e-9)h+='<div class="msg e">The two dose/level pairs are inconsistent: individual Km/Vmax cannot be solved.</div>';
   else{const k=C1*C2*(E2-E1)/den,vm=E1*(k+C1)/C1;
    if(k<=0||k>20||vm<=Math.max(E1,E2))h+='<div class="msg e">Calculated individual Km ('+f(k,1)+' mg/L) or Vmax ('+f(vm,0)+' mg/day) is implausible: check the doses and levels.</div>';
    else{Km=k;Vmax=vm;src='Individual: two dose/level pairs (Km '+f(Km,1)+' mg/L, Vmax '+f(Vmax,0)+' mg/day)';
     if(Km<2||Km>8)h+='<div class="msg w">Individual Km '+f(Km,1)+' mg/L is outside the usual 2-8: small dose changes will move the level a lot.</div>'}}}
- else if(E1&&lvl!==null&&$('plss').value=='Yes'){const C1=corr(lvl);Vmax=E1*(Km+C1)/C1;src='Individual: one steady-state level (Vmax '+f(Vmax,0)+' mg/day, Km fixed at 4 mg/L)';
+ else if(E1&&lvl>0&&$('plss').value=='Yes'){const C1=corr(lvl);Vmax=E1*(Km+C1)/C1;src='Individual: one steady-state level (Vmax '+f(Vmax,0)+' mg/day, Km fixed at 4 mg/L)';
   if(Vmax<=E1)h+='<div class="msg e">Estimated Vmax ('+f(Vmax,0)+' mg/day) is not above the current dose: the level will keep rising on this regimen.</div>'}
  else if(lvl!==null&&$('plss').value!='Yes')h+='<div class="msg w">Level not at steady state: individualization is unreliable. Phenytoin needs 7-14 days on a stable dose.</div>';
  h+='<div class="kv"><span>Dosing weight</span><b>'+f(dw)+' kg'+(wt>1.2*ibw?' (IBW)':'')+'</b><span>Vmax / Km</span><b>'+f(Vmax,0)+' mg/day / '+f(Km,1)+' mg/L</b><span>CrCl (binding context)</span><b>'+f(crcl)+' mL/min</b></div><div class="sm">'+src+'.</div>';
  const dm=Vmax*T/(Km+T)/F;
  h+='<h2 style="margin-top:12px">Recommended maintenance</h2>';
  if(dm>600){flag=true;h+='<div class="msg e"><b>NOT SUGGESTED</b> - calculated daily dose ('+f(dm,0)+' mg/day) exceeds the safety cap (600 mg/day). Pharmacist review required.</div>'}
- else{const rd=Math.max(100,Math.round(dm/25)*25),cp=Km*F*rd/(Vmax-F*rd);
-  h+='<div class="big">'+rd+' mg/day PO ('+$('pform').value+')</div><div class="kv"><span>Calculated before rounding</span><b>'+f(dm,0)+' mg/day</b><span>Predicted steady-state level</span><b>'+f(cp,1)+' mg/L</b></div>';
+ else{const rd=Math.max(100,Math.round(dm/25)*25),cp=F*rd<Vmax?Km*F*rd/(Vmax-F*rd):NaN;
+  h+='<div class="big">'+rd+' mg/day PO ('+$('pform').value+')</div><div class="kv"><span>Calculated before rounding</span><b>'+f(dm,0)+' mg/day</b><span>Predicted steady-state level</span><b>'+(Number.isFinite(cp)?f(cp,1):'No finite steady state')+' mg/L</b></div>';
   if(F*rd>=Vmax){flag=true;h+='<div class="msg e">Rounded dose reaches Vmax: the level would rise without bound. Pharmacist review required.</div>'}
   else if(cp<10||cp>20){flag=true;h+='<div class="msg w">Predicted level '+f(cp,1)+' mg/L is outside the usual 10-20 after rounding: review the regimen.</div>'}
   h+='<div class="sm">Nonlinear kinetics: near Vmax a small dose change moves the level a lot. Recheck a pre-dose level after 7-14 days.</div>'}
@@ -432,7 +432,7 @@ function krun(){const g=i=>v(i),o=$('kout'),m=[],e=[],w=[];
    else if(L>15){flag=true;h+='<div class="msg w">Trough above 15 ng/mL: above the usual range - review the dose.</div>'}
    if(L<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
    else{let a=D*g('ktgt')/L,lim=false;if(a>1.5*D){a=1.5*D;lim=true}if(a<.5*D){a=.5*D;lim=true}
-    const ar=Math.max(1,Math.round(a));
+    const lo=Math.max(1,Math.ceil(.5*D)),hi=Math.floor(1.5*D); if(lo>hi){o.innerHTML=h+'<div class="msg w">No whole-mg daily dose respects the 50% step limit. Specialist formulation/dose review required.</div></div>';return} const ar=Math.min(hi,Math.max(lo,Math.round(a)));
     h+='<h2 style="margin-top:12px">Adjusted dose</h2><div class="big">'+ar+' mg/day divided q12h</div><div class="kv"><span>Expected trough after adjustment</span><b>'+f(L*ar/D,1)+' ng/mL</b></div>'+(lim?'<div class="sm">Change limited to +/-50% per step: recheck the trough in 3-5 days.</div>':'<div class="sm">Linear (first-order) adjustment: recheck the trough in 3-5 days.</div>')}}}
  h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
 document.querySelectorAll('#tacro input,#tacro select').forEach(e=>e.oninput=krun);krun();
@@ -465,7 +465,7 @@ function crun(){const g=i=>v(i),o=$('cout'),m=[],e=[],w=[];
    else if(L>400){flag=true;h+='<div class="msg w">Trough above 400 ng/mL: above the usual range - review the dose.</div>'}
    if(L<=0)h+='<div class="msg e">Measured level is zero: adjustment cannot be calculated.</div>';
    else{let a=D*g('ctgt')/L,lim=false;if(a>1.5*D){a=1.5*D;lim=true}if(a<.5*D){a=.5*D;lim=true}
-    const ar=Math.max(50,Math.round(a/50)*50);
+    const lo=Math.max(50,Math.ceil(.5*D/50)*50),hi=Math.floor(1.5*D/50)*50; if(lo>hi){o.innerHTML=h+'<div class="msg w">No 50-mg daily increment respects the 50% step limit. Specialist review required.</div></div>';return} const ar=Math.min(hi,Math.max(lo,Math.round(a/50)*50));
     h+='<h2 style="margin-top:12px">Adjusted dose</h2><div class="big">'+ar+' mg/day divided q12h</div><div class="kv"><span>Expected trough after adjustment</span><b>'+f(L*ar/D,0)+' ng/mL</b></div>'+(lim?'<div class="sm">Change limited to +/-50% per step: recheck the trough in 2-4 days.</div>':'<div class="sm">Linear (first-order) adjustment: recheck the trough in 2-4 days.</div>')}}}
  h+='<div class="rev '+(flag?'y':'n')+'">'+(flag?'Pharmacist/clinician review required':'Routine monitoring recommended')+'</div></div>';o.innerHTML=h}
 document.querySelectorAll('#cyclo input,#cyclo select').forEach(e=>e.oninput=crun);crun();
@@ -484,7 +484,7 @@ function zrun(){const g=i=>v(i),o=$('zout'),m=[],e=[],w=[];
  let flag=crcl<30||dy!='No'||$('zser').value=='Yes';
  h+='<div class="kv"><span>CrCl (Cockcroft-Gault, actual weight)</span><b>'+f(crcl)+' mL/min</b></div>';
  h+='<h2 style="margin-top:12px">Recommended regimen</h2><div class="big">600 mg every 12 h, IV or PO</div><div class="sm">Oral bioavailability is about 100% - IV and PO are interchangeable. No weight adjustment.</div>';
- if(crcl<30&&dy=='No')h+='<div class="msg w">CrCl below 30: many protocols use 600 mg every 24 h, but the evidence is mixed - follow the local protocol and levels.</div>';
+ if(crcl<30&&dy=='No')h+='<div class="msg w">CrCl below 30: the manufacturer does not require renal dose adjustment. Metabolites accumulate and thrombocytopenia risk is higher; monitor CBC at least weekly and consider TDM/specialist review. Do not automatically change to every 24 h.</div>';
  if(dy=='Hemodialysis')h+='<div class="msg w">Hemodialysis removes linezolid: give the dose after the session.</div>';
  else if(dy=='CRRT')h+='<div class="msg w">CRRT removes linezolid partially: follow the protocol and levels.</div>';
  else if(dy=='Peritoneal dialysis')h+='<div class="msg w">Peritoneal dialysis: follow the protocol and levels.</div>';
@@ -509,6 +509,7 @@ function frun(){const g=i=>v(i),o=$('fout'),m=[],e=[],w=[];
  if(m.length||e.length){o.innerHTML=h+'<div class="sm">Fill all required inputs (age, sex, weight, SCr) with valid values.</div></div>';return}
  const fem=$('fsex').value=='Female',age=g('fage'),wt=g('fwt'),sc=$('funit').value=='umol'?g('fscr')/88.4:g('fscr');
  const crcl=Math.max(0,(140-age)*wt/(72*sc))*(fem?.85:1),dy=$('fdial').value,ind=$('find').value;
+ if(dy!='No'){o.innerHTML=h+'<div class="kv"><span>CrCl (not valid for dialysis dose selection)</span><b>'+f(crcl)+' mL/min</b></div><div class="msg w">Dialysis/CRRT: no automatic daily regimen is supplied. Select an indication-specific dialysis protocol. For intermittent hemodialysis the label specifies 100% of the indicated dose after each session; non-dialysis days and CRRT/PD require individualized review.</div></div>';return}
  const rd=x=>Math.max(50,Math.round(x/50)*50);
  let LD0,M0;if(ind=='Oesophageal candidiasis'){LD0=200;M0=100}else if(ind=='Cryptococcal induction'){LD0=0;M0=1200}else{LD0=Math.min(12*wt,800);M0=Math.min(6*wt,400)}
  const LD=rd(LD0);let M=rd(M0),half=false;
